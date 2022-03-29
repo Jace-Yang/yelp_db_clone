@@ -1,5 +1,4 @@
-numpy==1.18.5
 Flask==2.0.2
-SQLAlchemy==1.4.27
+sqlalchemy==1.4.27
 Jinja2>=3.0
 psycopg2-binary==2.8.6
