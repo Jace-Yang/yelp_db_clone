@@ -83,7 +83,6 @@ def get_post(post_id):
 def index():
     # 调用上面的函数，获取链接
     conn = get_db_connection()
-    # 查询所有数据，放到变量posts中
     bizs = conn.execute('SELECT * FROM business LIMIT 10').fetchall()
     return render_template('index2.html', bizs=bizs)  
 
@@ -94,6 +93,15 @@ def index():
 def post(post_id):
     post = get_post(post_id)
     return render_template('post.html', post=post)
+
+
+@app.route('/restaurants/<string:business_id>')
+def restaurants(business_id):
+
+    conn = get_db_connection()
+    restaurants = conn.execute('SELECT * FROM business WHERE business_id = %s',(business_id,)).fetchone()
+    #conn.close()
+    return render_template('restaurants.html', restaurants=restaurants)
 
 
 @app.route('/posts/new', methods=('GET', 'POST'))
