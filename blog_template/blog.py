@@ -13,6 +13,7 @@ DB_SERVER = "w4111.cisxo09blonu.us-east-1.rds.amazonaws.com"
 
 #DATABASEURI = "postgresql://"+DB_USER+":"+DB_PASSWORD+"@"+DB_SERVER+"/w4111"
 DATABASEURI = "postgresql://"+DB_USER+":"+DB_PASSWORD+"@"+DB_SERVER+"/proj1part2"
+DATABASEURI = "postgresql://jy3174:JaceYJH@w4111.cisxo09blonu.us-east-1.rds.amazonaws.com/proj1part2"
 engine = create_engine(DATABASEURI)
 
 
@@ -60,15 +61,33 @@ def get_post(post_id):
     return post
 
 
+# @app.route('/') 
+# def index():
+#     # 调用上面的函数，获取链接
+#     conn = get_db_connection()
+#     # 查询所有数据，放到变量posts中
+#     posts = conn.execute('SELECT * FROM posts').fetchall()
+
+#     # names = []
+#     # for result in posts:
+#     #     names.append(result['name'])  # can also be accessed using result[0]
+#     # posts.close()
+#     # print(names)
+
+#     #conn.close()
+#     #把查询出来的posts传给网页
+#     return render_template('index.html', posts=posts)  
+
+
 @app.route('/') 
 def index():
     # 调用上面的函数，获取链接
     conn = get_db_connection()
     # 查询所有数据，放到变量posts中
-    posts = conn.execute('SELECT * FROM posts').fetchall()
-    #conn.close()
-    #把查询出来的posts传给网页
-    return render_template('index.html', posts=posts)  
+    bizs = conn.execute('SELECT * FROM business LIMIT 10').fetchall()
+    return render_template('index2.html', bizs=bizs)  
+
+
 
 
 @app.route('/posts/<int:post_id>')

@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h1>{% block title %} Welcome to our Yealp Platform! {% endblock %}</h1>
+    {% for biz in bizs %}
+    
+        <h2>{{ biz['name'] }}</h2>
+    
+    {% endfor %}
+{% endblock %}
