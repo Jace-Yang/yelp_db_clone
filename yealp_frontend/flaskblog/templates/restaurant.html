@@ -1,0 +1,53 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+
+<h2>{% block title %} {{ restaurant['name'] }} {% endblock %}</h2>
+    <span class="badge badge-primary">{{ restaurant['city'] }}</span>
+<p>{{ restaurant['address'] }}</p>
+
+
+<h2>Add Review</h2>
+  <form action="" method="post">
+    <dl>
+      <dt>rate:
+      <dd><input type="text" name="rate" size="40" value="{{ request.form.name }}">
+      <dt>Content:
+      <dd><input type="text" name="Content" size="40" value="{{ request.form.address }}">
+
+      
+    </dl>
+    <div class="actions"><input type="submit" value="Add"></div>
+  </form>
+
+  {% for review in reviews %}
+    <article class="media content-section">
+      <img class="rounded-circle article-img" src="{{ url_for('static', filename='profile_pics/default.jpg') }}">
+      <div class="media-body">
+        <div class="article-metadata">
+          <a class="mr-1" href="{{ url_for('user_posts', username=review['username']) }}">{{ review['username'] }}</a>
+          
+          <span class="badge badge-primary">Stars: {{review['stars']}}</span>
+          
+
+          <small class="text-muted">{{ review['review_date'].strftime('%Y-%m-%d') }}</small>
+        </div>  
+        <p class="article-content">{{ review['detailed_review'] }}</p>
+        <button type="button" class="btn btn-primary btn-sm">
+          useful <span class="badge badge-light">{{review['useful']}}</span>
+          <span class="sr-only">unread messages</span>
+        </button>
+        <button type="button" class="btn btn-info btn-sm">
+          funny <span class="badge badge-light">{{review['funny']}}</span>
+          <span class="sr-only">unread messages</span>
+        </button>
+        <button type="button" class="btn btn-success btn-sm">
+          cool <span class="badge badge-light">{{review['cool']}}</span>
+          <span class="sr-only">unread messages</span>
+        </button>
+      </div>
+      
+    </article>
+  {% endfor %}
+
+{% endblock %}
