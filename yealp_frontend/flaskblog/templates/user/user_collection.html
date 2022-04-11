@@ -1,0 +1,12 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+    <h2 class="mb-3">{{ collection_name }} by {{ user['name'] }} </h2>
+
+    {% for biz in bizs %}
+    <a href="{{url_for('restaurant', business_id=biz['business_id'])}}">
+        <h4>{{ biz['name'] }}</h4>
+    </a>
+    {% endfor %}
+
+{% endblock %}

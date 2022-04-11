@@ -26,6 +26,7 @@ def before_request():
     import traceback; traceback.print_exc()
     g.conn = None
 
+
 @app.teardown_request
 def teardown_request(exception):
   """
@@ -98,7 +99,6 @@ def save_picture(form_picture):
     i = Image.open(form_picture)
     i.thumbnail(output_size)
     i.save(picture_path)
-
     return picture_fn
 
 
@@ -135,7 +135,6 @@ def new_post():
         return redirect(url_for('home'))
     return render_template('create_post.html', title='New Post',
                            form=form, legend='New Post')
-
 
 @app.route("/post/<int:post_id>")
 def post(post_id):
@@ -175,7 +174,7 @@ def delete_post(post_id):
     return redirect(url_for('home'))
 
 
-@app.route("/user/<string:username>")
+@app.route("/bloguser/<string:username>")
 def user_posts(username):
     page = request.args.get('page', 1, type=int)
     user = User.query.filter_by(username=username).first_or_404()
@@ -229,14 +228,11 @@ def reset_token(token):
     return render_template('reset_token.html', title='Reset Password', form=form)
 
 
-
-
-
-
 @app.route('/restaurants') 
 def restaurants():
-    # 调用上面的函数，获取链接
-    bizs = g.conn.execute('SELECT * FROM business LIMIT 10').fetchall()
+    bizs = g.conn.execute('''
+    SELECT * FROM business LIMIT 50
+    ''').fetchall()
     return render_template('restaurants_main.html', bizs=bizs)  
 
 
@@ -245,16 +241,86 @@ def restaurant(business_id):
     restaurant = g.conn.execute('SELECT * FROM business WHERE business_id = %s', (business_id, )).fetchone()
     # Load the review
     reviews = g.conn.execute('''
-        WITH R AS (
+        WITH one_restaurant AS (
             SELECT *
             FROM Review_of_Business
             WHERE business_id = %s AND detailed_review IS NOT NULL
-            LIMIT 10)
-        SELECT Users.name as username, short_tip, stars, 
+            LIMIT 50)
+        SELECT Users.name as username, short_tip, stars, user_id,
                detailed_review, review_date,
                useful, funny, cool	
-        FROM R 
+        FROM one_restaurant
             LEFT JOIN Users_write_Review USING(review_id)
             LEFT JOIN Users USING(user_id)
         ORDER BY review_date DESC''', (business_id, )).fetchall()
+
+    #form = LoginForm()
+    if form.validate_on_submit():
+        user = User.query.filter_by(email=form.email.data).first()
+        if user and bcrypt.check_password_hash(user.password, form.password.data):
+            login_user(user, remember=form.remember.data)
+            
     return render_template('restaurant.html', restaurant=restaurant, reviews=reviews)
+
+
+@app.route("/user/<string:user_id>")
+@app.route("/user/<string:user_id>/")
+def user_reviews(user_id):
+    #user_id = 'UCl94KiDnyHOSHYgGHjLJA'
+    print(10)
+    user = g.conn.execute('SELECT * FROM USERS WHERE user_id = %s', (user_id, )).fetchone()
+    # Load the review
+    reviews = g.conn.execute('''
+        WITH one_user AS(
+            SELECT user_id
+            FROM Users
+            WHERE user_id = %s),
+
+        User_review AS(
+            SELECT review_id
+            FROM one_user JOIN Users_write_Review USING(user_id)
+        )
+
+        SELECT * 
+        FROM User_review JOIN Review_of_Business USING(review_id)''', (user_id, )).fetchall()
+
+    collections = g.conn.execute('''
+        WITH one_user AS(
+            SELECT user_id AS collection_owner_id, collection_id
+            FROM Collection_of_User
+            WHERE user_id = %s)
+
+        SELECT collection_owner_id, collection_id, 
+        CONCAT('Collection NO.', collection_id, ' with ', COUNT(*), ' restaurants') AS collection_name
+        FROM one_user 
+            JOIN Collection_contain_Business USING(collection_owner_id, collection_id)
+        GROUP BY collection_owner_id, collection_id
+        ORDER BY collection_id''', (user_id, )).fetchall()
+    return render_template('user_reviews.html', user=user, reviews=reviews, collections=collections)
+
+
+@app.route("/user/<string:user_id>/collection/<int:collection_id>")
+def user_collection(user_id, collection_id):
+    # http://127.0.0.1:5000/user/9Xmw_WcUCShPD0qGO1UD7w/collection/1
+    user = g.conn.execute('SELECT * FROM USERS WHERE user_id = %s', (user_id, )).fetchone()
+    bizs_in_collection = g.conn.execute('''
+        WITH bizs_in_collections AS(
+            SELECT *
+            FROM Collection_contain_Business
+            WHERE collection_owner_id = %s AND collection_id = %s)
+        SELECT *
+        FROM bizs_in_collections JOIN Business USING(business_id)''', 
+        (user_id, collection_id)).fetchall()
+    collection_name = g.conn.execute('''
+        WITH one_collection AS(
+            SELECT user_id AS collection_owner_id, collection_id
+            FROM Collection_of_User
+            WHERE user_id = %s AND collection_id = %s)
+
+        SELECT CONCAT('Collection NO.', collection_id, ' with ', COUNT(*), ' restaurants') AS collection_name
+        FROM one_collection 
+            JOIN Collection_contain_Business USING(collection_owner_id, collection_id)
+        GROUP BY collection_owner_id, collection_id''', 
+        (user_id, collection_id)).fetchone()['collection_name']
+    print(bizs_in_collection)
+    return render_template('user/user_collection.html', user=user,  bizs=bizs_in_collection, collection_name=collection_name)

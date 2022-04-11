@@ -2,45 +2,11 @@
 
 {% block content %}
 
-
-
-
-<h2>{% block title %} {{ restaurant['name'] }} {% endblock %}</h2>
-    <span class="badge badge-primary">{{ restaurant['city'] }}</span>
-<p>{{ restaurant['address'] }}</p>
-
-
-  <div class="media-body">
-      
-      <div class="input-group">
-          <!-- <div class="input-group-prepend">
-          <div class="input-group-text">
-          <input type="radio" aria-label="Radio button for following text input">
-          </div>
-          </div> -->
-          
-          <select class="custom-select" id="inputGroupSelect03">
-              <option selected>Choose a collection to collect</option>
-              <option value="1">One</option>
-              <option value="2">Two</option>
-              <option value="3">Three</option>
-          </select>
-      </div>
-  </div>
-
-
-<h2>Add Review</h2>
-  <form action="" method="post">
-    <dl>
-      <dt>rate:
-      <dd><input type="text" name="rate" size="40" value="{{ request.form.name }}">
-      <dt>Content:
-      <dd><input type="text" name="Content" size="40" value="{{ request.form.address }}">
-
-      
-    </dl>
-    <div class="actions"><input type="submit" value="Add"></div>
-  </form>
+  {% for collection in collections %}
+    <a href="{{url_for('user_collection', user_id = user['user_id'], collection_id = collection['collection_id'])}}">
+        <h4>{{ collection['collection_name'] }}</h4>
+    </a>
+  {% endfor %}
 
   {% for review in reviews %}
     <article class="media content-section">
@@ -48,7 +14,9 @@
       <div class="media-body">
         <div class="article-metadata">
           <a class="mr-1" href="{{ url_for('user_reviews', user_id=review['user_id']) }}">{{ review['username'] }}</a>
+          
           <span class="badge badge-primary">Stars: {{review['stars']}}</span>
+          
 
           <small class="text-muted">{{ review['review_date'].strftime('%Y-%m-%d') }}</small>
         </div>  
