@@ -1,13 +1,38 @@
 from datetime import datetime
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
-from flaskblog import db, login_manager, app
+from flaskblog import db, login_manager, app, engine
 from flask_login import UserMixin
 
 
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(int(user_id))
+    conn = engine.connect()
+    user = conn.execute('''
+            SELECT *
+            FROM Users
+            WHERE user_id = %s''', (user_id, )).fetchone()
+    if user:
+        return Yealper(user)
+    else:
+        return None
 
+class Yealper(object):
+    """Wraps User object for Flask-Login"""
+    def __init__(self, user):
+        self.user_id = user['user_id']
+        self.name = user['name']
+
+    def get_id(self):
+        return self.user_id
+
+    def is_active(self):
+        return self._user.enabled
+
+    def is_anonymous(self):
+        return False
+
+    def is_authenticated(self):
+        return True
 
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)

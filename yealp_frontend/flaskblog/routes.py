@@ -1,14 +1,16 @@
 import os
 import secrets
 from PIL import Image
-from flask import render_template, url_for, flash, redirect, request, abort, g
+from flask import render_template, url_for, flash, redirect, request, abort, g, session
 from flaskblog import app, db, bcrypt, mail, engine
 from flaskblog.forms import (RegistrationForm, LoginForm, UpdateAccountForm,
                              PostForm, RequestResetForm, ResetPasswordForm)
-from flaskblog.models import User, Post
+from flaskblog.models import User, Post, Yealper
 from flask_login import login_user, current_user, logout_user, login_required
 from flask_mail import Message
 
+import secrets
+from datetime import date
 
 @app.before_request
 def before_request():
@@ -21,6 +23,7 @@ def before_request():
   """
   try:
     g.conn = engine.connect()
+    session['current_uid'] = ''
   except:
     print("uh oh, problem connecting to database")
     import traceback; traceback.print_exc()
@@ -34,6 +37,7 @@ def teardown_request(exception):
   If you don't the database could run out of memory!
   """
   try:
+    session.pop('current_uid', None)
     g.conn.close()
   except Exception as e:
     pass
@@ -54,14 +58,26 @@ def about():
 
 @app.route("/register", methods=['GET', 'POST'])
 def register():
-    if current_user.is_authenticated:
+    def add_user_to_db(email, name, password, user_id=None, yealping_since=None):
+        if not user_id:
+            user_id = secrets.token_hex(11)
+        if not yealping_since:
+            yealping_since = date.today().strftime("%Y-%m-%d")
+        g.conn.execute('''
+            INSERT INTO Users (user_id, email, name, password, yealping_since) 
+            VALUES (%s, %s, %s, %s, %s)''',
+        (user_id, email, name, password, yealping_since))
+        
+    #if current_user.is_authenticated:
+    if session['current_uid']:
         return redirect(url_for('home'))
     form = RegistrationForm()
     if form.validate_on_submit():
-        hashed_password = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
-        user = User(username=form.username.data, email=form.email.data, password=hashed_password)
-        db.session.add(user)
-        db.session.commit()
+        #hashed_password = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
+        #user = User(username=form.username.data, email=form.email.data, password=hashed_password)
+        #db.session.add(user)
+        #db.session.commit()
+        add_user_to_db(email=form.email.data, name=form.username.data, password=form.password.data)
         flash('Your account has been created! You are now able to log in', 'success')
         return redirect(url_for('login'))
     return render_template('register.html', title='Register', form=form)
@@ -69,14 +85,22 @@ def register():
 
 @app.route("/login", methods=['GET', 'POST'])
 def login():
-    if current_user.is_authenticated:
+    #if current_user.is_authenticated:
+    if session['current_uid']:
         return redirect(url_for('home'))
     form = LoginForm()
     if form.validate_on_submit():
-        user = User.query.filter_by(email=form.email.data).first()
-        if user and bcrypt.check_password_hash(user.password, form.password.data):
-            login_user(user, remember=form.remember.data)
+        #user = User.query.filter_by(email=form.email.data).first()
+        user = g.conn.execute('''
+            SELECT * 
+            FROM Users
+            WHERE email = %s
+        ''', (form.email.data, )).fetchone()
+        print(user)
+        #if user and bcrypt.check_password_hash(user.password, form.password.data):
+        if user and user['password'] == form.password.data:
             next_page = request.args.get('next')
+            login_user(Yealper(user))
             return redirect(next_page) if next_page else redirect(url_for('home'))
         else:
             flash('Login Unsuccessful. Please check email and password', 'danger')
@@ -85,6 +109,7 @@ def login():
 
 @app.route("/logout")
 def logout():
+    #session['current_uid'] = None
     logout_user()
     return redirect(url_for('home'))
 
@@ -122,10 +147,20 @@ def account():
     return render_template('account.html', title='Account',
                            image_file=image_file, form=form)
 
+@app.route("/user_account", methods=['GET', 'POST'])
+@login_required
+def user_account():
+    #form = UpdateAccountForm()
+    if request.method == 'GET':
+        if session.get('current_uid'):
+            print(1)
+    return render_template('user/user_account.html')
+
 
 @app.route("/post/new", methods=['GET', 'POST'])
 @login_required
 def new_post():
+    print(10)
     form = PostForm()
     if form.validate_on_submit():
         post = Post(title=form.title.data, content=form.content.data, author=current_user)
@@ -198,8 +233,9 @@ If you did not make this request then simply ignore this email and no changes wi
 
 
 @app.route("/reset_password", methods=['GET', 'POST'])
-def reset_request():
-    if current_user.is_authenticated:
+def reset_request():   
+    #if current_user.is_authenticated:
+    if session['current_uid']:
         return redirect(url_for('home'))
     form = RequestResetForm()
     if form.validate_on_submit():
@@ -212,7 +248,8 @@ def reset_request():
 
 @app.route("/reset_password/<token>", methods=['GET', 'POST'])
 def reset_token(token):
-    if current_user.is_authenticated:
+    #if current_user.is_authenticated:
+    if session['current_uid']:
         return redirect(url_for('home'))
     user = User.verify_reset_token(token)
     if user is None:
@@ -255,10 +292,10 @@ def restaurant(business_id):
         ORDER BY review_date DESC''', (business_id, )).fetchall()
 
     #form = LoginForm()
-    if form.validate_on_submit():
-        user = User.query.filter_by(email=form.email.data).first()
-        if user and bcrypt.check_password_hash(user.password, form.password.data):
-            login_user(user, remember=form.remember.data)
+    # if form.validate_on_submit():
+    #     user = User.query.filter_by(email=form.email.data).first()
+    #     if user and bcrypt.check_password_hash(user.password, form.password.data):
+    #         login_user(user, remember=form.remember.data)
             
     return render_template('restaurant.html', restaurant=restaurant, reviews=reviews)
 
