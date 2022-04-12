@@ -55,6 +55,21 @@ def home():
 def about():
     return render_template('about.html', title='About')
 
+def get_collections_by_user(user_id):
+    
+    collections = g.conn.execute('''
+        WITH collections AS(
+            SELECT user_id AS collection_owner_id, collection_id
+            FROM Collection_of_User
+            WHERE user_id = %s)
+        SELECT collection_owner_id, collection_id,
+               CONCAT('Collection NO.', collection_id, ' with ', COUNT(business_id), ' restaurants') AS collection_name
+        FROM collections LEFT JOIN Collection_contain_Business USING(collection_owner_id, collection_id)
+        GROUP BY collection_owner_id, collection_id
+        ORDER BY collection_id
+        ''', 
+        (user_id, )).fetchall()
+    return collections
 
 @app.route("/register", methods=['GET', 'POST'])
 def register():
@@ -68,8 +83,7 @@ def register():
             VALUES (%s, %s, %s, %s, %s)''',
         (user_id, email, name, password, yealping_since))
         
-    #if current_user.is_authenticated:
-    if session['current_uid']:
+    if current_user.is_authenticated:
         return redirect(url_for('home'))
     form = RegistrationForm()
     if form.validate_on_submit():
@@ -85,8 +99,7 @@ def register():
 
 @app.route("/login", methods=['GET', 'POST'])
 def login():
-    #if current_user.is_authenticated:
-    if session['current_uid']:
+    if current_user.is_authenticated:
         return redirect(url_for('home'))
     form = LoginForm()
     if form.validate_on_submit():
@@ -234,8 +247,8 @@ If you did not make this request then simply ignore this email and no changes wi
 
 @app.route("/reset_password", methods=['GET', 'POST'])
 def reset_request():   
-    #if current_user.is_authenticated:
-    if session['current_uid']:
+    if current_user.is_authenticated:
+    #if session['current_uid']:
         return redirect(url_for('home'))
     form = RequestResetForm()
     if form.validate_on_submit():
@@ -248,8 +261,8 @@ def reset_request():
 
 @app.route("/reset_password/<token>", methods=['GET', 'POST'])
 def reset_token(token):
-    #if current_user.is_authenticated:
-    if session['current_uid']:
+    if current_user.is_authenticated:
+    #if session['current_uid']:
         return redirect(url_for('home'))
     user = User.verify_reset_token(token)
     if user is None:
@@ -272,8 +285,21 @@ def restaurants():
     ''').fetchall()
     return render_template('restaurants_main.html', bizs=bizs)  
 
+@app.route('/favorites') 
+def user_favorite():
+    bizs = g.conn.execute('''
+    WITH user_favorite AS(
+        SELECT business_id
+        FROM Users_favorite_Business
+        WHERE user_id = %s
+    )
+    SELECT * 
+    FROM business JOIN user_favorite USING(business_id) 
+    ORDER BY name
+    ''', (current_user.user_id, )).fetchall()
+    return render_template('restaurants_main.html', bizs=bizs)  
 
-@app.route('/restaurants/<string:business_id>')
+@app.route('/restaurants/<string:business_id>', methods=['GET', 'POST'])
 def restaurant(business_id):
     restaurant = g.conn.execute('SELECT * FROM business WHERE business_id = %s', (business_id, )).fetchone()
     # Load the review
@@ -290,14 +316,67 @@ def restaurant(business_id):
             LEFT JOIN Users_write_Review USING(review_id)
             LEFT JOIN Users USING(user_id)
         ORDER BY review_date DESC''', (business_id, )).fetchall()
+    if current_user.is_authenticated:
+    # Load whether the user already like the restaurant
+        favorite = 0
+        collections = g.conn.execute('''
+            WITH one_user_collections AS(
+                SELECT user_id AS collection_owner_id, collection_id
+                FROM Collection_of_User
+                WHERE user_id = %s)            
+            SELECT collection_id, COUNT(CASE WHEN business_id = %s THEN 1 ELSE NULL END) AS biz_in
+            FROM one_user_collections 
+            LEFT JOIN Collection_contain_Business USING(collection_owner_id, collection_id)
+            GROUP BY collection_id
+            ORDER BY collection_id''', (current_user.user_id, business_id)).fetchall()
+    
+        favorite = g.conn.execute('''
+                    SELECT 1 FROM 
+                    Users_favorite_Business 
+                    WHERE user_id = %s AND business_id = %s
+                    ''', (current_user.user_id, business_id)).fetchone()
+        if favorite:
+            favorite = 1
+        
+        if request.method == "POST" and 'favorite_action' in request.form and request.form['favorite_action'] == 'Favorite the restaurant':
+            g.conn.execute('''
+                        INSERT INTO Users_favorite_Business(user_id, business_id) 
+                        VALUES (%s, %s)''',
+                    (current_user.user_id, business_id))
+            favorite = 1
+            return render_template("restaurant.html", restaurant=restaurant, reviews=reviews, favorite=favorite, collections=collections)
+        if request.method == "POST" and 'favorite_action' in request.form and request.form['favorite_action'] == 'Unfavorite the restaurant':
+            g.conn.execute('''
+                            DELETE FROM Users_favorite_Business 
+                            WHERE user_id = %s AND business_id = %s''',
+                        (current_user.user_id, business_id))
+            favorite = 0
+            return render_template("restaurant.html", restaurant=restaurant, reviews=reviews, favorite=favorite, collections=collections)
 
-    #form = LoginForm()
-    # if form.validate_on_submit():
-    #     user = User.query.filter_by(email=form.email.data).first()
-    #     if user and bcrypt.check_password_hash(user.password, form.password.data):
-    #         login_user(user, remember=form.remember.data)
-            
-    return render_template('restaurant.html', restaurant=restaurant, reviews=reviews)
+        if request.method == "POST"  and 'collections_update' in request.form:
+            current_collections = request.form.getlist('collections_update')
+            # Delete all original collections
+            g.conn.execute('''
+                            DELETE FROM Collection_contain_Business 
+                            WHERE collection_owner_id = %s AND business_id = %s''',
+                        (current_user.user_id, business_id))
+            for collection in current_collections:
+                g.conn.execute('''
+                                INSERT INTO Collection_contain_Business(collection_owner_id, collection_id, business_id) VALUES(%s, %s, %s)''',
+                                (current_user.user_id, int(collection), business_id))
+
+            collections = g.conn.execute('''
+                WITH one_user_collections AS(
+                    SELECT user_id AS collection_owner_id, collection_id
+                    FROM Collection_of_User
+                    WHERE user_id = %s)
+                SELECT collection_id, COUNT(CASE WHEN business_id = %s THEN 1 ELSE NULL END) AS biz_in
+                FROM one_user_collections 
+                LEFT JOIN Collection_contain_Business USING(collection_owner_id, collection_id)
+                GROUP BY collection_id
+                ORDER BY collection_id''', (current_user.user_id, business_id)).fetchall()
+            return render_template("restaurant.html", restaurant=restaurant, reviews=reviews, favorite=favorite, collections=collections)
+    return render_template('restaurant.html', restaurant=restaurant, reviews=reviews, favorite=favorite, collections=collections)
 
 
 @app.route("/user/<string:user_id>")
@@ -335,11 +414,35 @@ def user_reviews(user_id):
         ORDER BY collection_id''', (user_id, )).fetchall()
     return render_template('user_reviews.html', user=user, reviews=reviews, collections=collections)
 
-
-@app.route("/user/<string:user_id>/collection/<int:collection_id>")
-def user_collection(user_id, collection_id):
+@app.route("/user/collections/", methods=['GET', 'POST'])
+def user_collections():
     # http://127.0.0.1:5000/user/9Xmw_WcUCShPD0qGO1UD7w/collection/1
-    user = g.conn.execute('SELECT * FROM USERS WHERE user_id = %s', (user_id, )).fetchone()
+    user = g.conn.execute('SELECT * FROM USERS WHERE user_id = %s', (current_user.user_id, )).fetchone()
+    collections = get_collections_by_user(current_user.user_id)
+    
+    # Create a new collection
+    if request.method == "POST" and 'create_new_collection' in request.form:
+        created_date = date.today().strftime("%Y-%m-%d")
+        current_collections = g.conn.execute('''
+            SELECT * FROM Collection_of_User WHERE user_id = %s''',
+            (current_user.user_id, )).fetchall()
+        if current_collections:
+            new_id = max([collection['collection_id'] for collection in current_collections]) + 1
+        else:
+            new_id = 1
+        g.conn.execute('''
+            INSERT INTO Collection_of_User(user_id, collection_id, created_date) 
+            VALUES (%s, %s, %s)''',
+            (current_user.user_id, new_id, created_date))
+        collections = get_collections_by_user(current_user.user_id)
+        return render_template("user/user_collections.html", user=user,  collections = collections)
+
+    return render_template('user/user_collections.html', user=user,  collections = collections)
+
+@app.route("/user/collection/<int:collection_id>")
+def user_collection(collection_id):
+    # http://127.0.0.1:5000/user/9Xmw_WcUCShPD0qGO1UD7w/collection/1
+    user = g.conn.execute('SELECT * FROM USERS WHERE user_id = %s', (current_user.user_id, )).fetchone()
     bizs_in_collection = g.conn.execute('''
         WITH bizs_in_collections AS(
             SELECT *
@@ -347,17 +450,22 @@ def user_collection(user_id, collection_id):
             WHERE collection_owner_id = %s AND collection_id = %s)
         SELECT *
         FROM bizs_in_collections JOIN Business USING(business_id)''', 
-        (user_id, collection_id)).fetchall()
-    collection_name = g.conn.execute('''
+        (current_user.user_id, collection_id)).fetchall()
+    collection = g.conn.execute('''
         WITH one_collection AS(
             SELECT user_id AS collection_owner_id, collection_id
             FROM Collection_of_User
             WHERE user_id = %s AND collection_id = %s)
 
-        SELECT CONCAT('Collection NO.', collection_id, ' with ', COUNT(*), ' restaurants') AS collection_name
+        SELECT CONCAT('Collection NO.', collection_id, ' with ', COUNT(business_id), ' restaurants') AS collection_name
         FROM one_collection 
-            JOIN Collection_contain_Business USING(collection_owner_id, collection_id)
+            LEFT JOIN Collection_contain_Business USING(collection_owner_id, collection_id)
         GROUP BY collection_owner_id, collection_id''', 
-        (user_id, collection_id)).fetchone()['collection_name']
-    print(bizs_in_collection)
-    return render_template('user/user_collection.html', user=user,  bizs=bizs_in_collection, collection_name=collection_name)
+        (current_user.user_id, collection_id)).fetchone()
+    print(collection)
+    return render_template('user/user_collection.html', user=user,  bizs=bizs_in_collection, collection=collection)
+
+
+@app.route("/testing")
+def testing():
+    return render_template('testing2.html')

@@ -1,0 +1,43 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<head>
+  
+    <link rel="stylesheet" href=
+"https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" 
+        integrity=
+"sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" 
+        crossorigin="anonymous">
+  
+    <script src=
+        "https://code.jquery.com/jquery.min.js">
+    </script>
+  
+    <script src=
+"https://gitcdn.github.io/bootstrap-toggle/2.2.2/js/bootstrap-toggle.min.js">
+    </script>
+  
+    <link href=
+"https://gitcdn.github.io/bootstrap-toggle/2.2.2/css/bootstrap-toggle.min.css"
+         rel="stylesheet"/>
+</head>
+  
+<body>
+    <div class="container mt-5">
+  
+        <!--Initialize toggles with id toggle-one
+            with JavaScript.-->
+        <input type="checkbox" id="toggle-one">
+  
+        <script>
+            $(function() {
+                $('#toggle-one').bootstrapToggle({
+                    on: 'Followed',
+                    off: 'Follow this restaurant'
+                });
+            })
+        </script>
+    </div>
+</body>
+  
+{% endblock %}

@@ -1,0 +1,19 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+    <h2 class="mb-3">Collections of {{user['name'] }} </h2>
+
+    {% if collections %}
+        {% for collection in collections %}
+        <a href="{{url_for('user_collection', collection_id = collection['collection_id'])}}">
+            <h4>{{ collection['collection_name'] }}</h4>
+        </a>
+        {% endfor %}
+    {% endif %}
+    
+        
+    <form id="create" action="" method="post">
+        <input class="btn btn-primary float-left btn-sm mt-2" type="submit" name="create_new_collection" value="create a new collection" >
+    </form>
+  
+{% endblock %}

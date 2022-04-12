@@ -38,6 +38,9 @@ class LoginForm(FlaskForm):
 class CollectionForm(FlaskForm):
     collect = BooleanField('Collect')
 
+class Favorite(FlaskForm):
+    collect = BooleanField('Favorite')
+
 
 class UpdateAccountForm(FlaskForm):
     username = StringField('Username',
