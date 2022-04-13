@@ -200,6 +200,7 @@ def delete_post(post_id):
     return redirect(url_for('home'))
 
 
+
 @app.route("/bloguser/<string:username>")
 def user_posts(username):
     page = request.args.get('page', 1, type=int)
