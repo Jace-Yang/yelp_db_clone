@@ -501,7 +501,7 @@ def user_collections():
             VALUES (%s, %s, %s)''',
             (current_user.user_id, new_id, created_date))
         collections = get_collections_by_user(current_user.user_id)
-        return render_template("user/user_collections.html", user=user,  collections = collections)
+        return render_template("user/collections.html", user=user,  collections = collections)
 
     return render_template('user/collections.html', user=user,  collections = collections)
 

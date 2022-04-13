@@ -20,5 +20,5 @@ def get_detailed_reviews_with_user(business_id):
         FROM one_restaurant
             LEFT JOIN Users_write_Review USING(review_id)
             LEFT JOIN Users USING(user_id)
-        ORDER BY review_date DESC''', (business_id, )).fetchall()
+        ORDER BY review_date, review_id DESC''', (business_id, )).fetchall()
     return reviews
