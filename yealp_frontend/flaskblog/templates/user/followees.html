@@ -7,7 +7,7 @@
     
     <div class="media-body">
         <div class="article-metadata">
-        <a class="mr-1" href="{{ url_for('user_main', user_id=followee['follwee_user_id']) }}">{{ followee['name'] }}</a>
+        <a class="mr-1" href="{{ url_for('user_main', user_id=followee['user_id']) }}">{{ followee['name'] }}</a>
     </div>
     <span class="badge badge-pill badge-light">Yealping since: {{followee['yealping_since'].strftime('%Y-%m-%d')}}</span>    
     </article>

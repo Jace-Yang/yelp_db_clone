@@ -18,23 +18,31 @@
   
 
     {% if title %}
-        <title>Flask Blog - {{ title }}</title>
+        <title>Yealp - {{ title }}</title>
     {% else %}
-        <title>Flask Blog</title>
+        <title>Yealp</title>
     {% endif %}
 </head>
 <body>
     <header class="site-header">
       <nav class="navbar navbar-expand-md navbar-dark bg-steel fixed-top">
         <div class="container">
-          <a class="navbar-brand mr-4" href="/">Flask Blog</a>
+          <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 40 40">
+            <g fill="#21322" fill-rule="evenodd">
+              <path fill="#FFFFFF88" fill-rule="nonzero" d="M14.5298902 21.5C14.507851 26.018456 17.8394458 29.8528924 22.3167165 30.4619752 26.7939872 31.0710581 31.0288181 28.2659495 32.2145073 23.9057803 33.4001964 19.545611 31.1691372 14.982191 27 13.24L27 18.35C27.0026654 19.3188548 26.6189689 20.248796 25.9338825 20.9338825 25.2487961 21.6189689 24.3188548 22.0026654 23.35 22L19 22 19 13.75C16.2405708 15.357347 14.5395286 18.3065813 14.5298902 21.5zM19 11.51L19 7.71999997C17.5714457 8.1762516 16.2221339 8.85090753 15 9.71999997L15 14.55C16.080969 13.2416667 17.4500076 12.2011973 19 11.51z"/>
+              <path fill="#FFFFFF88" fill-rule="nonzero" d="M27,7.43999997 L27,11.11 C31.2629016,12.5339001 34.2307926,16.4079586 34.4958841,20.894555 C34.7609756,25.3811515 32.2699411,29.5777517 28.2043775,31.4937409 C24.138814,33.4097301 19.3165598,32.6596835 16.0250022,29.5993779 C12.7334445,26.5390724 11.634721,21.7841263 13.25,17.59 C12.772553,17.8551824 12.2361342,17.9961643 11.69,18 L9.42999997,18 C8.00976646,23.6910487 10.1581303,29.6771966 14.8730578,33.1664023 C19.5879854,36.655608 25.9406594,36.9605151 30.9680841,33.9389098 C35.9955088,30.9173045 38.7073066,25.164428 37.8386486,19.3635202 C36.9699906,13.5626124 32.6919982,8.85642334 27,7.43999997 Z"/>
+              <path fill="#FFFFFF" fill-rule="nonzero" d="M23.5 25L18.5 25C18.2238576 25 18 25.2238576 18 25.5L18 35C18 36.6568543 19.3431457 38 21 38 22.6568543 38 24 36.6568543 24 35L24 25.5C24 25.2238576 23.7761424 25 23.5 25zM11.5 21L6.49999996 21C6.22385759 21 5.99999996 21.2238576 5.99999996 21.5L5.99999996 35C5.99999996 36.6568543 7.34314572 38 8.99999996 38 10.6568542 38 12 36.6568543 12 35L12 21.5C12 21.2238576 11.7761424 21 11.5 21z"/>
+              <path fill="#FFFFFF" fill-rule="nonzero" d="M23 23L19 23C18.4477152 23 18 22.5522848 18 22L18 6.76999995C18 4.00857621 20.2385763 1.76999995 23 1.76999995 25.7614238 1.76999995 28 4.00857621 28 6.76999995L28 18C28 19.3260824 27.4732158 20.597852 26.5355339 21.5355339 25.597852 22.4732158 24.3260825 23 23 23L23 23zM20 21L23 21C24.6568543 21 26 19.6568542 26 18L26 6.76999996C26 5.11314571 24.6568543 3.76999996 23 3.76999996 21.3431458 3.76999996 20 5.11314571 20 6.76999996L20 21zM15 1.99999996L2.99999995 1.99999996C2.44771521 1.99999996 1.99999996 2.44771521 1.99999996 2.99999995L1.99999996 15C1.99999996 17.209139 3.79086096 19 5.99999995 19L12 19C14.209139 19 16 17.209139 16 15L16 2.99999995C16 2.44771521 15.5522847 1.99999996 15 1.99999996zM14 15C14 16.1045695 13.1045695 17 12 17L5.99999996 17C4.89543046 17 3.99999996 16.1045695 3.99999996 15L3.99999996 3.99999996 5.99999996 3.99999996 5.99999996 12C5.99999996 12.5522847 6.44771522 13 6.99999996 13 7.55228472 13 7.99999996 12.5522847 7.99999996 12L7.99999996 3.99999996 9.99999996 3.99999996 9.99999996 12C9.99999996 12.5522847 10.4477152 13 11 13 11.5522847 13 12 12.5522847 12 12L12 3.99999996 14 3.99999996 14 15z"/>
+            </g>
+          </svg>
+          
+          <a class="navbar-brand mr-4 ml-1" href="/">Yealp</a>
           <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarToggle" aria-controls="navbarToggle" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
           </button>
           <div class="collapse navbar-collapse" id="navbarToggle">
             <div class="navbar-nav mr-auto">
               <a class="nav-item nav-link" href="{{ url_for('home') }}">Home</a>
-              <a class="nav-item nav-link" href="{{ url_for('about') }}">About</a>
               <a class="nav-item nav-link" href="{{ url_for('restaurants') }}">Restaurants</a>
             </div>
             <!-- Navbar Right Side -->
@@ -69,14 +77,28 @@
         <div class="col-md-4">
           <div class="content-section">
             <h3>All your favorites</h3>
-            <p class='text-muted'>Below is your favorites in out Yealp Platform!
-              <ul class="list-group">
-                <li class="list-group-item list-group-item-light"><a href="{{ url_for('user_favorites') }}">My Favorites</a></li>
-                <li class="list-group-item list-group-item-light"><a href="{{ url_for('user_collections') }}">My Collections</a></li>
-                <li class="list-group-item list-group-item-light"><a href="{{ url_for('user_followees') }}">My followees</li>
-                <li class="list-group-item list-group-item-light">etc</li>
-              </ul>
-            </p>
+            
+              {% if current_user.is_authenticated %}
+                <p class='text-muted'>Below is your favorites in out Yealp Platform!
+                  <ul class="list-group">
+                    <li class="list-group-item list-group-item-light"><a href="{{ url_for('user_main', user_id = current_user.user_id) }}">My main pages</a></li>
+                    <li class="list-group-item list-group-item-light"><a href="{{ url_for('user_favorites') }}">My Favorites</a></li>
+                    <li class="list-group-item list-group-item-light"><a href="{{ url_for('user_collections') }}">My Collections</a></li>
+                    <li class="list-group-item list-group-item-light"><a href="{{ url_for('user_followees') }}">My followees</li>
+                    <li class="list-group-item list-group-item-light">etc</li>
+                  </ul>
+                </p>
+              {% else %}
+              <p class='text-muted'>Please <a href="{{ url_for('login') }}">login</a> to browse our platform!
+                <ul class="list-group">
+                  <li class="list-group-item list-group-item-light">My main page</li>
+                  <li class="list-group-item list-group-item-light">My favorites</li>
+                  <li class="list-group-item list-group-item-light">My Collections</li>
+                  <li class="list-group-item list-group-item-light">My followees</li>
+                  <li class="list-group-item list-group-item-light">etc</li>
+                </ul>
+              </p>
+              {% endif %}
           </div>
         </div>
       </div>

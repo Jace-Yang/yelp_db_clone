@@ -19,7 +19,7 @@
   <h2>{% block title %} {{ restaurant['name'] }} {% endblock %} </h2>
   <span class="badge badge-primary">{{ restaurant['city'] }}</span>
   <p>{{ restaurant['address'] }}</p>
-
+  
   
   {% if collections %}
     <form id="collection" action="" method="post">
@@ -75,20 +75,13 @@
     <input type="checkbox" checked data-toggle="toggle" data-style="ios">
     -->
     
-    
+    <HR style="border:4 double #983636" width="40%" color=#983636 SIZE=5>
 
-  <h2>Add Review</h2>
+  <a class="m-1" href="{{ url_for('create_review', business_id=restaurant['business_id']) }}">Submit new review</a>
+  <a class="m-1" href="{{ url_for('create_review', business_id=restaurant['business_id']) }}">Submit new tips</a>
   
-  <form action="" method="post">
-    <dl>
-      <dt>rate:
-      <dd><input type="text" name="rate" size="40" value="{{ request.form.name }}">
-      <dt>Content:
-      <dd><input type="text" name="Content" size="40" value="{{ request.form.address }}">
-    </dl>
-    <div class="actions"><input type="submit" value="Add"></div>
-  </form>
 
+  
   {% for review in reviews %}
     <article class="media content-section">
       <img class="rounded-circle article-img" src="{{ url_for('static', filename='profile_pics/default.jpg') }}">
@@ -100,18 +93,31 @@
           <small class="text-muted">{{ review['review_date'].strftime('%Y-%m-%d') }}</small>
         </div>  
         <p class="article-content">{{ review['detailed_review'] }}</p>
-        <button type="button" class="btn btn-primary btn-sm">
-          useful <span class="badge badge-light">{{review['useful']}}</span>
-          <span class="sr-only">unread messages</span>
-        </button>
-        <button type="button" class="btn btn-info btn-sm">
-          funny <span class="badge badge-light">{{review['funny']}}</span>
-          <span class="sr-only">unread messages</span>
-        </button>
-        <button type="button" class="btn btn-success btn-sm">
-          cool <span class="badge badge-light">{{review['cool']}}</span>
-          <span class="sr-only">unread messages</span>
-        </button>
+        
+        {% if current_user.user_id == review['user_id'] %}
+          <form id="review" action="" method="post">
+            <input class="btn btn-danger btn-sm" type="submit" name="modify review" value="delete"  aria-label="With textarea" >
+            
+          </form>
+        
+        {% else %}
+          <button type="button" class="btn btn-primary btn-sm">
+            useful <span class="badge badge-light">{{review['useful']}}</span>
+            <span class="sr-only">unread messages</span>
+          </button>
+          <button type="button" class="btn btn-info btn-sm">
+            funny <span class="badge badge-light">{{review['funny']}}</span>
+            <span class="sr-only">unread messages</span>
+          </button>
+          <button type="button" class="btn btn-success btn-sm">
+            cool <span class="badge badge-light">{{review['cool']}}</span>
+            <span class="sr-only">unread messages</span>
+          </button>
+
+        {% endif %}
+
+        
+
       </div>
       
     </article>

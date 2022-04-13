@@ -36,4 +36,3 @@ engine = create_engine(DATABASEURI)
 
 
 from flaskblog import routes
-

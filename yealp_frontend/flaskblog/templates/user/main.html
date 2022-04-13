@@ -17,48 +17,53 @@
   
 
   <ul>
-    <li>Yealping Since: <span class="badge badge-pill badge-primary">{{user['yealping_since'] }}</span></li>
+    <li style="padding:0.25em">
+      <span class="badge badge-pill badge-primary">Yealping Since: 
+        <span class="badge badge-light">{{user['yealping_since'] }}</span> 
+      </span>
+    </li>
+    <li style="padding:0.25em">
+      <span class="badge badge-pill badge-info">Number of fans: 
+        <span class="badge badge-light">{{n_fans}}</span> 
+      </span>
+    </li>
   </ul>
 
-
-  
+  <div class="content-section">
+    <p>This user has {{collections|length }} collection(s):
+      <ul class="list-group">
+        {% for collection in collections %}
+          <li class="list-group-item list-group-item-light">
+            <a href="{{url_for('user_collection', user_id = user['user_id'], collection_id = collection['collection_id'])}}">
+              {{ collection['collection_name'] }}
+            </a>
+          </li>
+        {% endfor %}
+      </ul>
+    </p>
+  </div>
   <p></p>
-  {% for collection in collections %}
-    <a href="{{url_for('user_collection', user_id = user['user_id'], collection_id = collection['collection_id'])}}">
-        <h4>{{ collection['collection_name'] }}</h4>
-    </a>
-  {% endfor %}
+
 
   
+  <div class="content-section">
+    <p>This user has {{reviews|length }} review(s): </p>
+    {% for review in reviews %}
+      <article class="media content-section">
+        <img class="rounded-circle article-img" src="{{ url_for('static', filename='profile_pics/default.jpg') }}">
+        <div class="media-body">
+          <div class="article-metadata">
+            <a class="mr-1" href="{{ url_for('user_main', user_id=review['user_id']) }}">{{ review['username'] }}</a>
+            
+            <span class="badge badge-primary">Stars: {{review['stars']}}</span>
+            
 
-  {% for review in reviews %}
-    <article class="media content-section">
-      <img class="rounded-circle article-img" src="{{ url_for('static', filename='profile_pics/default.jpg') }}">
-      <div class="media-body">
-        <div class="article-metadata">
-          <a class="mr-1" href="{{ url_for('user_main', user_id=review['user_id']) }}">{{ review['username'] }}</a>
+            <small class="text-muted">{{ review['review_date'].strftime('%Y-%m-%d') }}</small>
+          </div>  
+          <p class="article-content">{{ review['detailed_review'] }}</p>
           
-          <span class="badge badge-primary">Stars: {{review['stars']}}</span>
-          
-
-          <small class="text-muted">{{ review['review_date'].strftime('%Y-%m-%d') }}</small>
-        </div>  
-        <p class="article-content">{{ review['detailed_review'] }}</p>
-        <button type="button" class="btn btn-primary btn-sm">
-          useful <span class="badge badge-light">{{review['useful']}}</span>
-          <span class="sr-only">unread messages</span>
-        </button>
-        <button type="button" class="btn btn-info btn-sm">
-          funny <span class="badge badge-light">{{review['funny']}}</span>
-          <span class="sr-only">unread messages</span>
-        </button>
-        <button type="button" class="btn btn-success btn-sm">
-          cool <span class="badge badge-light">{{review['cool']}}</span>
-          <span class="sr-only">unread messages</span>
-        </button>
-      </div>
-      
-    </article>
-  {% endfor %}
-
+        
+      </article>
+    {% endfor %}
+  </div>
 {% endblock %}

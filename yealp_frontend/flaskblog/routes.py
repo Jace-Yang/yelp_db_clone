@@ -5,7 +5,10 @@ from flask import render_template, url_for, flash, redirect, request, abort, g, 
 from flaskblog import app, db, bcrypt, mail, engine
 from flaskblog.forms import (RegistrationForm, LoginForm, UpdateAccountForm,
                              PostForm, RequestResetForm, ResetPasswordForm)
+
+from flaskblog.forms import ReviewForm
 from flaskblog.models import User, Post, Yealper
+from flaskblog.database_utils import get_user, get_restaurant, get_detailed_reviews_with_user
 from flask_login import login_user, current_user, logout_user, login_required
 from flask_mail import Message
 
@@ -14,10 +17,9 @@ from datetime import date
 
 def get_current_user():
     if not current_user.is_authenticated:
-                return redirect(url_for('login'))
+        return redirect(url_for('login'))
     else:
-        cur_user = g.conn.execute('SELECT * FROM USERS WHERE user_id = %s', (current_user.user_id, )).fetchone()
-    return cur_user
+        return get_user(current_user.user_id)
 
 
 @app.before_request
@@ -57,27 +59,6 @@ def home():
     page = request.args.get('page', 1, type=int)
     posts = Post.query.order_by(Post.date_posted.desc()).paginate(page=page, per_page=5)
     return render_template('home.html', posts=posts)
-
-
-@app.route("/about")
-def about():
-    return render_template('about.html', title='About')
-
-def get_collections_by_user(user_id):
-    
-    collections = g.conn.execute('''
-        WITH collections AS(
-            SELECT user_id AS collection_owner_id, collection_id
-            FROM Collection_of_User
-            WHERE user_id = %s)
-        SELECT collection_owner_id, collection_id,
-               CONCAT('Collection NO.', collection_id, ' with ', COUNT(business_id), ' restaurants') AS collection_name
-        FROM collections LEFT JOIN Collection_contain_Business USING(collection_owner_id, collection_id)
-        GROUP BY collection_owner_id, collection_id
-        ORDER BY collection_id
-        ''', 
-        (user_id, )).fetchall()
-    return collections
 
 @app.route("/register", methods=['GET', 'POST'])
 def register():
@@ -130,7 +111,6 @@ def login():
 
 @app.route("/logout")
 def logout():
-    #session['current_uid'] = None
     logout_user()
     return redirect(url_for('home'))
 
@@ -168,14 +148,7 @@ def account():
     return render_template('account.html', title='Account',
                            image_file=image_file, form=form)
 
-@app.route("/user_account", methods=['GET', 'POST'])
-@login_required
-def user_account():
-    #form = UpdateAccountForm()
-    if request.method == 'GET':
-        if session.get('current_uid'):
-            print(1)
-    return render_template('user/account.html')
+
 
 
 @app.route("/post/new", methods=['GET', 'POST'])
@@ -293,37 +266,11 @@ def restaurants():
     ''').fetchall()
     return render_template('restaurants_main.html', bizs=bizs)  
 
-@app.route('/favorites') 
-def user_favorites():
-    bizs = g.conn.execute('''
-    WITH user_favorite AS(
-        SELECT business_id
-        FROM Users_favorite_Business
-        WHERE user_id = %s
-    )
-    SELECT * 
-    FROM business JOIN user_favorite USING(business_id) 
-    ORDER BY name
-    ''', (current_user.user_id, )).fetchall()
-    return render_template('user/favorites.html', bizs=bizs)  
-
-@app.route('/restaurants/<string:business_id>', methods=['GET', 'POST'])
+@app.route('/restaurant/<string:business_id>', methods=['GET', 'POST'])
 def restaurant(business_id):
-    restaurant = g.conn.execute('SELECT * FROM business WHERE business_id = %s', (business_id, )).fetchone()
+    restaurant = get_restaurant(business_id)
     # Load the review
-    reviews = g.conn.execute('''
-        WITH one_restaurant AS (
-            SELECT *
-            FROM Review_of_Business
-            WHERE business_id = %s AND detailed_review IS NOT NULL
-            LIMIT 50)
-        SELECT Users.name as username, short_tip, stars, user_id,
-               detailed_review, review_date,
-               useful, funny, cool	
-        FROM one_restaurant
-            LEFT JOIN Users_write_Review USING(review_id)
-            LEFT JOIN Users USING(user_id)
-        ORDER BY review_date DESC''', (business_id, )).fetchall()
+    reviews = get_detailed_reviews_with_user(business_id)
     if current_user.is_authenticated:
     # Load whether the user already like the restaurant
         favorite = 0
@@ -346,14 +293,16 @@ def restaurant(business_id):
         if favorite:
             favorite = 1
         
-        if request.method == "POST" and 'favorite_action' in request.form and request.form['favorite_action'] == 'Favorite the restaurant':
+        if request.method == "POST" and request.form.get('favorite_action') == 'Favorite the restaurant':
+            print(request.form)
             g.conn.execute('''
                         INSERT INTO Users_favorite_Business(user_id, business_id) 
                         VALUES (%s, %s)''',
                     (current_user.user_id, business_id))
             favorite = 1
             return render_template("restaurant.html", restaurant=restaurant, reviews=reviews, favorite=favorite, collections=collections)
-        if request.method == "POST" and 'favorite_action' in request.form and request.form['favorite_action'] == 'Unfavorite the restaurant':
+        if request.method == "POST" and request.form.get('favorite_action') == 'Unfavorite the restaurant':
+            print(request.form)
             g.conn.execute('''
                             DELETE FROM Users_favorite_Business 
                             WHERE user_id = %s AND business_id = %s''',
@@ -384,12 +333,44 @@ def restaurant(business_id):
                 GROUP BY collection_id
                 ORDER BY collection_id''', (current_user.user_id, business_id)).fetchall()
             return render_template("restaurant.html", restaurant=restaurant, reviews=reviews, favorite=favorite, collections=collections)
+
+        if request.method == "POST" and request.form.get("modify review")=="delete":
+
+            print(request.form)
+            # name= value=  id = "{{review['review_id']}}" >
+
+
+            # del_review_id = request.form.get('delete_review')
+            # g.conn.execute('''
+            #     DELETE FROM Review_of_Business
+            #     WHERE review_id = %s
+            #     ''', (del_review_id, ))
+            # reviews = get_detailed_reviews_with_user(business_id)
+            # return render_template('restaurant.html', restaurant=restaurant, reviews=reviews, favorite=favorite, collections=collections)
     return render_template('restaurant.html', restaurant=restaurant, reviews=reviews, favorite=favorite, collections=collections)
 
+@app.route("/user_account", methods=['GET', 'POST'])
+@login_required
+def user_account():
+    return render_template('user/account.html')
+
+@app.route('/favorites') 
+def user_favorites():
+    bizs = g.conn.execute('''
+    WITH user_favorite AS(
+        SELECT business_id
+        FROM Users_favorite_Business
+        WHERE user_id = %s
+    )
+    SELECT * 
+    FROM business JOIN user_favorite USING(business_id) 
+    ORDER BY name
+    ''', (current_user.user_id, )).fetchall()
+    return render_template('user/favorites.html', bizs=bizs)  
 
 @app.route("/user/<string:user_id>", methods=['GET', 'POST'])
 def user_main(user_id):
-    
+    print(123)
     def CurrentUserIsFan():
         if not current_user.is_authenticated:
             return False
@@ -399,8 +380,15 @@ def user_main(user_id):
             WHERE follwee_user_id = %s AND fan_user_id = %s
             ''', (user_id, current_user.user_id)).fetchone()
         return True if is_fan else False
+    
+    def get_n_fans(user_id):
+        n_fans = g.conn.execute('''
+            SELECT COUNT(DISTINCT fan_user_id) AS n
+            FROM Users_follow_Users
+            WHERE follwee_user_id = %s''', (user_id, )).fetchone()['n']
+        return n_fans
 
-    user = g.conn.execute('SELECT * FROM USERS WHERE user_id = %s', (user_id, )).fetchone()
+    user = get_user(user_id)
     # Load all the review sented by the mainpage user
     reviews = g.conn.execute('''
         WITH one_user AS(
@@ -429,6 +417,9 @@ def user_main(user_id):
         GROUP BY collection_owner_id, collection_id
         ORDER BY collection_id''', (user_id, )).fetchall()
 
+    # Load total amount of followers of the mainpage user
+    n_fans = get_n_fans(user_id)
+
     is_fan = CurrentUserIsFan()
     
     # Follow button interaction
@@ -444,7 +435,8 @@ def user_main(user_id):
                 VALUES (%s, %s, %s)''',
                 (user_id, current_user.user_id, follow_since))
             is_fan = True
-            return render_template('user/main.html', user=user, reviews=reviews, collections=collections, is_fan=is_fan)
+            n_fans = get_n_fans(user_id)
+            return render_template('user/main.html', user=user, reviews=reviews, collections=collections, is_fan=is_fan, n_fans = n_fans)
 
         # Execute the Unfollow request
         if request.form.get('follow_action') == 'Unfollow this user':
@@ -454,8 +446,9 @@ def user_main(user_id):
                 WHERE follwee_user_id = %s AND fan_user_id = %s''',
                 (user_id, current_user.user_id))
             is_fan = False
-            return render_template('user/main.html', user=user, reviews=reviews, collections=collections, is_fan=is_fan)
-    return render_template('user/main.html', user=user, reviews=reviews, collections=collections, is_fan=is_fan)
+            n_fans = get_n_fans(user_id)
+            return render_template('user/main.html', user=user, reviews=reviews, collections=collections, is_fan=is_fan, n_fans = n_fans)
+    return render_template('user/main.html', user=user, reviews=reviews, collections=collections, is_fan=is_fan, n_fans = n_fans)
 
 @app.route("/user/followees", methods=['GET', 'POST'])
 def user_followees():
@@ -475,8 +468,22 @@ def user_followees():
 
 @app.route("/user/collections/", methods=['GET', 'POST'])
 def user_collections():
+    def get_collections_by_user(user_id):
     # http://127.0.0.1:5000/user/9Xmw_WcUCShPD0qGO1UD7w/collection/1
-    user = g.conn.execute('SELECT * FROM USERS WHERE user_id = %s', (current_user.user_id, )).fetchone()
+        collections = g.conn.execute('''
+            WITH collections AS(
+                SELECT user_id AS collection_owner_id, collection_id
+                FROM Collection_of_User
+                WHERE user_id = %s)
+            SELECT collection_owner_id, collection_id,
+                CONCAT('Collection NO.', collection_id, ' with ', COUNT(business_id), ' restaurants') AS collection_name
+            FROM collections LEFT JOIN Collection_contain_Business USING(collection_owner_id, collection_id)
+            GROUP BY collection_owner_id, collection_id
+            ORDER BY collection_id
+            ''', 
+            (user_id, )).fetchall()
+        return collections
+    user = get_current_user()
     collections = get_collections_by_user(current_user.user_id)
     
     # Create a new collection
@@ -515,7 +522,6 @@ def user_collection(collection_id):
             SELECT user_id AS collection_owner_id, collection_id
             FROM Collection_of_User
             WHERE user_id = %s AND collection_id = %s)
-
         SELECT CONCAT('Collection NO.', collection_id, ' with ', COUNT(business_id), ' restaurants') AS collection_name
         FROM one_collection 
             LEFT JOIN Collection_contain_Business USING(collection_owner_id, collection_id)
@@ -525,6 +531,30 @@ def user_collection(collection_id):
     return render_template('user/collection.html', user=user,  bizs=bizs_in_collection, collection=collection)
 
 
-@app.route("/testing")
-def testing():
-    return render_template('testing2.html')
+@app.route("/restaurant/<string:business_id>/review/new", methods=['GET', 'POST'])
+@login_required
+def create_review(business_id):
+    form = ReviewForm()
+    if form.validate_on_submit():
+        max_review_id =  g.conn.execute('''
+            SELECT MAX(review_id) as max_id FROM Review_of_Business''').fetchone()
+        
+        review_id = max_review_id['max_id'] + 1
+        review_date = date.today().strftime("%Y-%m-%d")
+        detailed_review = form.content.data
+        n_star = form.star.data
+        useful = funny = cool = 0
+        # Input the reivew into the business
+        g.conn.execute('''
+            INSERT INTO Review_of_Business(review_id, review_date, business_id, detailed_review, stars, useful, funny, cool)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)''',
+            (review_id, review_date, business_id, detailed_review, n_star, useful, funny, cool))
+        # Log the users that creates it
+        g.conn.execute('''
+            INSERT INTO Users_write_Review(user_id, review_id)
+            VALUES (%s, %s)''',
+            (current_user.user_id, review_id))
+        flash('Your post has been created!', 'success')
+        #render_template('/restaurant/<string:business_id>/review/new', form = form, title='New Review', legend='Create new review')
+        return redirect(url_for('restaurant', business_id = business_id))
+    return render_template('review/create_detail_review.html', form = form, title='New Review', legend='Create new review')
