@@ -4,7 +4,7 @@ from PIL import Image
 from flask import render_template, url_for, flash, redirect, request, abort, g, session
 from flaskblog import app, db, bcrypt, mail, engine
 from flaskblog.forms import (RegistrationForm, LoginForm, UpdateAccountForm,
-                             PostForm, RequestResetForm, ResetPasswordForm,SearchForm)
+                             PostForm, RequestResetForm, ResetPasswordForm)
 
 from flaskblog.forms import ReviewForm
 from flaskblog.models import User, Post, Yealper
@@ -59,24 +59,6 @@ def home():
     page = request.args.get('page', 1, type=int)
     posts = Post.query.order_by(Post.date_posted.desc()).paginate(page=page, per_page=5)
     return render_template('home.html', posts=posts)
-
-#GET /Papi/v1.0/restaurants?zipcode = &state =  &sk = star& p= 1(page)
-@app.route("/restaurants")
-def search():
-    form = SearchForm()
-    if form.validate_on_submit():
-        business = g.conn.execute('''
-            SELECT * 
-            FROM Business
-            WHERE zipcode = %s
-            LIMIT 5
-        ''', (form.search.data, )).fetchall()
-        print(business)
-    zipcode = request.args.get('zipcode')
-   
-
-    
-
 
 @app.route("/register", methods=['GET', 'POST'])
 def register():
@@ -165,9 +147,6 @@ def account():
     image_file = url_for('static', filename='profile_pics/' + current_user.image_file)
     return render_template('account.html', title='Account',
                            image_file=image_file, form=form)
-
-
-
 
 @app.route("/post/new", methods=['GET', 'POST'])
 @login_required
@@ -353,19 +332,6 @@ def restaurant(business_id):
                 ORDER BY collection_id''', (current_user.user_id, business_id)).fetchall()
             return render_template("restaurant.html", restaurant=restaurant, reviews=reviews, favorite=favorite, collections=collections)
 
-        if request.method == "POST" and request.form.get("modify review")=="delete":
-
-            print(request.form)
-            # name= value=  id = "{{review['review_id']}}" >
-
-
-            # del_review_id = request.form.get('delete_review')
-            # g.conn.execute('''
-            #     DELETE FROM Review_of_Business
-            #     WHERE review_id = %s
-            #     ''', (del_review_id, ))
-            # reviews = get_detailed_reviews_with_user(business_id)
-            # return render_template('restaurant.html', restaurant=restaurant, reviews=reviews, favorite=favorite, collections=collections)
     return render_template('restaurant.html', restaurant=restaurant, reviews=reviews, favorite=favorite, collections=collections)
 
 @app.route("/user_account", methods=['GET', 'POST'])
@@ -389,7 +355,7 @@ def user_favorites():
 
 @app.route("/user/<string:user_id>", methods=['GET', 'POST'])
 def user_main(user_id):
-    print(123)
+
     def CurrentUserIsFan():
         if not current_user.is_authenticated:
             return False
@@ -411,17 +377,19 @@ def user_main(user_id):
     # Load all the review sented by the mainpage user
     reviews = g.conn.execute('''
         WITH one_user AS(
-            SELECT user_id
+            SELECT user_id, name AS username
             FROM Users
             WHERE user_id = %s),
 
         User_review AS(
-            SELECT review_id
+            SELECT review_id, username
             FROM one_user JOIN Users_write_Review USING(user_id)
         )
 
         SELECT * 
-        FROM User_review JOIN Review_of_Business USING(review_id)''', (user_id, )).fetchall()
+        FROM User_review 
+            JOIN Review_of_Business USING(review_id)
+            JOIN Business USING(business_id)''', (user_id, )).fetchall()
     # Load all the collections created by the mainpage user
     collections = g.conn.execute('''
         WITH one_user AS(
@@ -538,13 +506,24 @@ def user_collection(collection_id):
         (current_user.user_id, collection_id)).fetchall()
     collection = g.conn.execute('''
         WITH one_collection AS(
-            SELECT user_id AS collection_owner_id, collection_id
+            SELECT user_id AS collection_owner_id, collection_id, created_date
             FROM Collection_of_User
-            WHERE user_id = %s AND collection_id = %s)
-        SELECT CONCAT('Collection NO.', collection_id, ' with ', COUNT(business_id), ' restaurants') AS collection_name
-        FROM one_collection 
+            WHERE user_id = %s AND collection_id = %s),
+            
+        one_collection_n_fan AS(
+            SELECT a.collection_owner_id AS collection_owner_id, 
+                a.collection_id AS collection_id, created_date,
+                COUNT(DISTINCT fan_user_id) AS n_fans
+            FROM one_collection a LEFT JOIN Users_follow_Collection b ON 
+                a.collection_owner_id = b.followee_user_id AND
+                a.collection_id = b.collection_id
+            GROUP BY a.collection_owner_id, a.collection_id, created_date
+        )
+
+        SELECT CONCAT('Collection NO.', collection_id, ' with ', COUNT(business_id), ' restaurants') AS collection_name, created_date, n_fans
+        FROM one_collection_n_fan 
             LEFT JOIN Collection_contain_Business USING(collection_owner_id, collection_id)
-        GROUP BY collection_owner_id, collection_id''', 
+        GROUP BY collection_owner_id, collection_id, created_date, n_fans''', 
         (current_user.user_id, collection_id)).fetchone()
     print(collection)
     return render_template('user/collection.html', user=user,  bizs=bizs_in_collection, collection=collection)
@@ -577,3 +556,27 @@ def create_review(business_id):
         #render_template('/restaurant/<string:business_id>/review/new', form = form, title='New Review', legend='Create new review')
         return redirect(url_for('restaurant', business_id = business_id))
     return render_template('review/create_detail_review.html', form = form, title='New Review', legend='Create new review')
+
+
+@app.route("/restaurant/<string:business_id>/review/<string:review_id>/delete", methods=('POST',))
+@login_required
+def delete_review(business_id, review_id):
+    print(business_id, review_id)
+    g.conn.execute('''
+        DELETE FROM Review_of_Business
+        WHERE review_id = %s
+        ''', (review_id, ))
+    return redirect(url_for('restaurant', business_id=business_id))
+
+
+
+@app.route("/restaurant/<string:business_id>/review/<string:review_id>/upvote/<string:upvote_type>", methods=('POST',))
+@login_required
+def upvote_review(business_id, review_id, upvote_type):
+    print(business_id, review_id, upvote_type)
+    g.conn.execute(f'''
+        UPDATE Review_of_Business 
+        SET {upvote_type} = {upvote_type} + 1 
+        WHERE review_id = %s
+        ''', (review_id, ))
+    return redirect(url_for('restaurant', business_id=business_id))
