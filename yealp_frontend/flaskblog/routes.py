@@ -12,6 +12,14 @@ from flask_mail import Message
 import secrets
 from datetime import date
 
+def get_current_user():
+    if not current_user.is_authenticated:
+                return redirect(url_for('login'))
+    else:
+        cur_user = g.conn.execute('SELECT * FROM USERS WHERE user_id = %s', (current_user.user_id, )).fetchone()
+    return cur_user
+
+
 @app.before_request
 def before_request():
   """
@@ -167,7 +175,7 @@ def user_account():
     if request.method == 'GET':
         if session.get('current_uid'):
             print(1)
-    return render_template('user/user_account.html')
+    return render_template('user/account.html')
 
 
 @app.route("/post/new", methods=['GET', 'POST'])
@@ -286,7 +294,7 @@ def restaurants():
     return render_template('restaurants_main.html', bizs=bizs)  
 
 @app.route('/favorites') 
-def user_favorite():
+def user_favorites():
     bizs = g.conn.execute('''
     WITH user_favorite AS(
         SELECT business_id
@@ -297,7 +305,7 @@ def user_favorite():
     FROM business JOIN user_favorite USING(business_id) 
     ORDER BY name
     ''', (current_user.user_id, )).fetchall()
-    return render_template('restaurants_main.html', bizs=bizs)  
+    return render_template('user/favorites.html', bizs=bizs)  
 
 @app.route('/restaurants/<string:business_id>', methods=['GET', 'POST'])
 def restaurant(business_id):
@@ -379,13 +387,21 @@ def restaurant(business_id):
     return render_template('restaurant.html', restaurant=restaurant, reviews=reviews, favorite=favorite, collections=collections)
 
 
-@app.route("/user/<string:user_id>")
-@app.route("/user/<string:user_id>/")
-def user_reviews(user_id):
-    #user_id = 'UCl94KiDnyHOSHYgGHjLJA'
-    print(10)
+@app.route("/user/<string:user_id>", methods=['GET', 'POST'])
+def user_main(user_id):
+    
+    def CurrentUserIsFan():
+        if not current_user.is_authenticated:
+            return False
+        is_fan = g.conn.execute('''
+            SELECT * 
+            FROM Users_follow_Users 
+            WHERE follwee_user_id = %s AND fan_user_id = %s
+            ''', (user_id, current_user.user_id)).fetchone()
+        return True if is_fan else False
+
     user = g.conn.execute('SELECT * FROM USERS WHERE user_id = %s', (user_id, )).fetchone()
-    # Load the review
+    # Load all the review sented by the mainpage user
     reviews = g.conn.execute('''
         WITH one_user AS(
             SELECT user_id
@@ -399,7 +415,7 @@ def user_reviews(user_id):
 
         SELECT * 
         FROM User_review JOIN Review_of_Business USING(review_id)''', (user_id, )).fetchall()
-
+    # Load all the collections created by the mainpage user
     collections = g.conn.execute('''
         WITH one_user AS(
             SELECT user_id AS collection_owner_id, collection_id
@@ -412,7 +428,50 @@ def user_reviews(user_id):
             JOIN Collection_contain_Business USING(collection_owner_id, collection_id)
         GROUP BY collection_owner_id, collection_id
         ORDER BY collection_id''', (user_id, )).fetchall()
-    return render_template('user_reviews.html', user=user, reviews=reviews, collections=collections)
+
+    is_fan = CurrentUserIsFan()
+    
+    # Follow button interaction
+    if request.method == "POST":
+        if not current_user.is_authenticated:
+            return redirect(url_for('login'))
+
+        # Execute the follow request
+        if request.form.get('follow_action') == 'Follow this user':
+            follow_since = date.today().strftime("%Y-%m-%d")
+            g.conn.execute('''
+                INSERT INTO Users_follow_Users(follwee_user_id, fan_user_id, follow_since) 
+                VALUES (%s, %s, %s)''',
+                (user_id, current_user.user_id, follow_since))
+            is_fan = True
+            return render_template('user/main.html', user=user, reviews=reviews, collections=collections, is_fan=is_fan)
+
+        # Execute the Unfollow request
+        if request.form.get('follow_action') == 'Unfollow this user':
+            print((user_id, current_user.user_id))
+            g.conn.execute('''
+                DELETE FROM Users_follow_Users 
+                WHERE follwee_user_id = %s AND fan_user_id = %s''',
+                (user_id, current_user.user_id))
+            is_fan = False
+            return render_template('user/main.html', user=user, reviews=reviews, collections=collections, is_fan=is_fan)
+    return render_template('user/main.html', user=user, reviews=reviews, collections=collections, is_fan=is_fan)
+
+@app.route("/user/followees", methods=['GET', 'POST'])
+def user_followees():
+    cur_user = get_current_user()
+    print(cur_user)
+    followees = g.conn.execute('''
+        WITH followees AS(
+            SELECT follwee_user_id AS user_id
+            FROM Users_follow_Users
+            WHERE fan_user_id = %s)
+        SELECT *
+        FROM followees JOIN Users USING(user_id)
+        ''',
+        (cur_user['user_id'], )).fetchall()
+    print(followees)
+    return render_template('user/followees.html', followees=followees)
 
 @app.route("/user/collections/", methods=['GET', 'POST'])
 def user_collections():
@@ -437,7 +496,7 @@ def user_collections():
         collections = get_collections_by_user(current_user.user_id)
         return render_template("user/user_collections.html", user=user,  collections = collections)
 
-    return render_template('user/user_collections.html', user=user,  collections = collections)
+    return render_template('user/collections.html', user=user,  collections = collections)
 
 @app.route("/user/collection/<int:collection_id>")
 def user_collection(collection_id):
@@ -463,7 +522,7 @@ def user_collection(collection_id):
         GROUP BY collection_owner_id, collection_id''', 
         (current_user.user_id, collection_id)).fetchone()
     print(collection)
-    return render_template('user/user_collection.html', user=user,  bizs=bizs_in_collection, collection=collection)
+    return render_template('user/collection.html', user=user,  bizs=bizs_in_collection, collection=collection)
 
 
 @app.route("/testing")

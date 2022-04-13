@@ -1,0 +1,22 @@
+{% extends 'layout.html' %}
+
+
+{% block content %}
+
+
+  
+    <h1>{% block title %} Here are all the restaurants you favorited! {% endblock %}</h1>
+
+    {% for biz in bizs %}
+        <a href="{{url_for('restaurant', business_id=biz['business_id'])}}">
+            <h3>{{ biz['name'] }}</h3>
+        </a>
+    
+    
+
+      
+            
+            
+        
+    {% endfor %}
+{% endblock %}

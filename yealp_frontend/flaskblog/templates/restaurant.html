@@ -78,14 +78,13 @@
     
 
   <h2>Add Review</h2>
+  
   <form action="" method="post">
     <dl>
       <dt>rate:
       <dd><input type="text" name="rate" size="40" value="{{ request.form.name }}">
       <dt>Content:
       <dd><input type="text" name="Content" size="40" value="{{ request.form.address }}">
-
-      
     </dl>
     <div class="actions"><input type="submit" value="Add"></div>
   </form>
@@ -95,7 +94,7 @@
       <img class="rounded-circle article-img" src="{{ url_for('static', filename='profile_pics/default.jpg') }}">
       <div class="media-body">
         <div class="article-metadata">
-          <a class="mr-1" href="{{ url_for('user_reviews', user_id=review['user_id']) }}">{{ review['username'] }}</a>
+          <a class="mr-1" href="{{ url_for('user_main', user_id=review['user_id']) }}">{{ review['username'] }}</a>
           <span class="badge badge-primary">Stars: {{review['stars']}}</span>
 
           <small class="text-muted">{{ review['review_date'].strftime('%Y-%m-%d') }}</small>
