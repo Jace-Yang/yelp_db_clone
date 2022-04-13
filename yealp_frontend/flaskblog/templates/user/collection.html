@@ -3,6 +3,21 @@
 {% block content %}
     <h2 class="mb-3">{{ collection['collection_name'] }} by {{ user['name'] }} </h2>
 
+
+    <ul>
+        <li style="padding:0.25em">
+            <span class="badge badge-pill badge-primary">Collection created in: 
+            <span class="badge badge-light">{{collection['created_date'] }}</span> 
+            </span>
+        </li>
+        <li style="padding:0.25em">
+            <span class="badge badge-pill badge-info">Number of fans: 
+            <span class="badge badge-light">{{collection['n_fans']}}</span> 
+            </span>
+        </li>
+    </ul>
+
+      
     {% if bizs %}
         {% for biz in bizs %}
         <a href="{{url_for('restaurant', business_id=biz['business_id'])}}">

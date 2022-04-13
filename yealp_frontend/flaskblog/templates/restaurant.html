@@ -95,25 +95,22 @@
         <p class="article-content">{{ review['detailed_review'] }}</p>
         
         {% if current_user.user_id == review['user_id'] %}
-          <form id="review" action="" method="post">
-            <input class="btn btn-danger btn-sm" type="submit" name="modify review" value="delete"  aria-label="With textarea" >
-            
-          </form>
-        
+          <form action="{{ url_for('delete_review', review_id = review['review_id'], business_id=restaurant['business_id']) }}" method="POST">
+            <input type="submit" value="Delete" class="btn btn-danger btn-sm"
+                onclick="return confirm('Are you sure you want to delete your review?')">
+          </form>  
         {% else %}
-          <button type="button" class="btn btn-primary btn-sm">
-            useful <span class="badge badge-light">{{review['useful']}}</span>
-            <span class="sr-only">unread messages</span>
-          </button>
-          <button type="button" class="btn btn-info btn-sm">
-            funny <span class="badge badge-light">{{review['funny']}}</span>
-            <span class="sr-only">unread messages</span>
-          </button>
-          <button type="button" class="btn btn-success btn-sm">
-            cool <span class="badge badge-light">{{review['cool']}}</span>
-            <span class="sr-only">unread messages</span>
-          </button>
-
+          <div style="display: flex;">
+            <form action="{{ url_for('upvote_review', review_id = review['review_id'], business_id=restaurant['business_id'], upvote_type = 'useful') }}" method="POST">
+              <input class="btn btn-primary btn-sm m-1" type="submit" value="Userful: {{review['useful']}}" >
+            </form>
+            <form action="{{ url_for('upvote_review', review_id = review['review_id'], business_id=restaurant['business_id'], upvote_type = 'funny') }}" method="POST">
+              <input class="btn btn-info btn-sm m-1" type="submit" value="Funny: {{review['funny']}}" >
+            </form>
+            <form action="{{ url_for('upvote_review', review_id = review['review_id'], business_id=restaurant['business_id'], upvote_type = 'cool') }}" method="POST">
+              <input class="btn btn-success btn-sm m-1" type="submit" value="Cool: {{review['cool']}}" >
+            </form>
+          </div>
         {% endif %}
 
         

@@ -14,7 +14,6 @@
 
   <h4>Main page of user {{user['name'] }}</h4>
 
-  
 
   <ul>
     <li style="padding:0.25em">
@@ -43,8 +42,6 @@
     </p>
   </div>
   <p></p>
-
-
   
   <div class="content-section">
     <p>This user has {{reviews|length }} review(s): </p>
@@ -53,16 +50,14 @@
         <img class="rounded-circle article-img" src="{{ url_for('static', filename='profile_pics/default.jpg') }}">
         <div class="media-body">
           <div class="article-metadata">
-            <a class="mr-1" href="{{ url_for('user_main', user_id=review['user_id']) }}">{{ review['username'] }}</a>
+            
+            
             
             <span class="badge badge-primary">Stars: {{review['stars']}}</span>
-            
-
+            on <a class="mr-1" href="{{ url_for('restaurant', business_id=review['business_id']) }}">{{ review['name'] }}</a>
             <small class="text-muted">{{ review['review_date'].strftime('%Y-%m-%d') }}</small>
           </div>  
           <p class="article-content">{{ review['detailed_review'] }}</p>
-          
-        
       </article>
     {% endfor %}
   </div>
