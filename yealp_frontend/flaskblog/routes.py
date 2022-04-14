@@ -260,7 +260,7 @@ def reset_token(token):
 @app.route('/restaurants') 
 def restaurants():
     bizs = g.conn.execute('''
-    SELECT * FROM business LIMIT 50
+    SELECT * FROM biz_with_stars LIMIT 50
     ''').fetchall()
     return render_template('restaurants_main.html', bizs=bizs)  
 
