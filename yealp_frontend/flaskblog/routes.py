@@ -344,18 +344,36 @@ def user_account():
     return render_template('user/account.html')
 
 @app.route('/favorites') 
+@login_required
 def user_favorites():
     bizs = g.conn.execute('''
-    WITH user_favorite AS(
-        SELECT business_id
-        FROM Users_favorite_Business
-        WHERE user_id = %s
-    )
-    SELECT * 
-    FROM business JOIN user_favorite USING(business_id) 
-    ORDER BY name
-    ''', (current_user.user_id, )).fetchall()
-    return render_template('user/favorites.html', bizs=bizs)  
+        WITH user_favorite AS(
+            SELECT business_id
+            FROM Users_favorite_Business
+            WHERE user_id = %s
+        )
+        SELECT * 
+        FROM business JOIN user_favorite USING(business_id) 
+        ORDER BY name
+        ''', (current_user.user_id, )).fetchall()
+    collections = g.conn.execute('''
+        WITH one_fan_collection AS(
+            SELECT followee_user_id AS collection_owner_id, collection_id
+            FROM Users_follow_Collection
+            WHERE fan_user_id = %s),
+            
+        collection AS(
+            SELECT collection_owner_id AS user_id, collection_id, 
+                CONCAT('Collection NO.', collection_id, ' with ', COUNT(*), ' restaurants') AS collection_name
+            FROM one_fan_collection JOIN Collection_contain_Business USING(collection_owner_id, collection_id)
+            GROUP BY collection_owner_id, collection_id
+            ORDER BY COUNT(*) DESC)
+            
+        SELECT user_id AS owner_uid, collection_id, name as collection_owner_name, collection_name
+        FROM collection JOIN Users USING(user_id)''', (current_user.user_id, )).fetchall()
+
+    
+    return render_template('user/favorites.html', bizs=bizs, collections=collections)  
 
 @app.route("/user/<string:user_id>", methods=['GET', 'POST'])
 def user_main(user_id):

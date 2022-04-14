@@ -3,14 +3,35 @@
 
 {% block content %}
 
-    <h3>Here are all the collections you favorited!</h3>
-  
-    <h3>Here are all the restaurants you favorited!</h3>
+    <div class="content-section">
+        <h3>Here are all the {{collections|length }} collections you favorited:</h3>
+        <ul class="list-group">
+            {% for collection in collections %}
+                <li class="list-group-item list-group-item-light">
+                    
+                    <a href="{{url_for('user_collection', user_id = collection['owner_uid'], collection_id = collection['collection_id'])}}"><h6>{{ collection['collection_name'] }}</a> 
+                        created by
+                        <a href="{{url_for('user_main', user_id = collection['owner_uid'])}}"> {{ collection['collection_owner_name'] }} </a></h6>
+                    
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
 
-    {% for biz in bizs %}
-        <a href="{{url_for('restaurant', business_id=biz['business_id'])}}">
-            <h6>{{ biz['name'] }}</h6>
-        </a>
-        
-    {% endfor %}
+    
+
+    
+    <div class="content-section">
+        <h3>Here are all the {{bizs|length }} restaurants you favorited:</h3>
+        <ul class="list-group">
+            {% for biz in bizs %}
+                <li class="list-group-item list-group-item-light">
+                    <h6><a href="{{url_for('restaurant', business_id=biz['business_id'])}}">
+                        {{biz['name']}}
+                    </a></h6>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+
 {% endblock %}
