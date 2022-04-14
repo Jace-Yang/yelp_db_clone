@@ -1,4 +1,5 @@
 import os
+from pickle import TRUE
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
@@ -27,8 +28,13 @@ app.config['MAIL_USERNAME'] = os.environ.get('EMAIL_USER')
 app.config['MAIL_PASSWORD'] = os.environ.get('EMAIL_PASS')
 mail = Mail(app)
 
-DB_USER = os.environ.get('DB_USER')
-DB_PASSWORD = os.environ.get('DB_PASSWORD')
+TESTING = False
+if TESTING:
+    DB_USER = os.environ.get('DB_USER_1')
+    DB_PASSWORD = os.environ.get('DB_USER_1')
+else:
+    DB_USER = os.environ.get('DB_USER_2')
+    DB_PASSWORD = os.environ.get('DB_USER_2')
 DB_SERVER = "w4111.cisxo09blonu.us-east-1.rds.amazonaws.com"
 #DATABASEURI = "postgresql://"+DB_USER+":"+DB_PASSWORD+"@"+DB_SERVER+"/w4111"
 DATABASEURI = "postgresql://"+DB_USER+":"+DB_PASSWORD+"@"+DB_SERVER+"/proj1part2"
