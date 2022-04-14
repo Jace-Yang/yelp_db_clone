@@ -4,7 +4,7 @@ from PIL import Image
 from flask import render_template, url_for, flash, redirect, request, abort, g, session
 from flaskblog import app, db, bcrypt, mail, engine
 from flaskblog.forms import (RegistrationForm, LoginForm, UpdateAccountForm,
-                             PostForm, RequestResetForm, ResetPasswordForm)
+                             PostForm, RequestResetForm, ResetPasswordForm,SearchForm)
 
 from flaskblog.forms import ReviewForm
 from flaskblog.models import User, Post, Yealper
@@ -53,8 +53,8 @@ def teardown_request(exception):
     pass
 
 
-@app.route("/")
-@app.route("/home")
+
+@app.route("/oldhome")
 def home():
     page = request.args.get('page', 1, type=int)
     posts = Post.query.order_by(Post.date_posted.desc()).paginate(page=page, per_page=5)
@@ -573,7 +573,6 @@ def delete_review(business_id, review_id):
     return redirect(url_for('restaurant', business_id=business_id))
 
 
-
 @app.route("/restaurant/<string:business_id>/review/<string:review_id>/upvote/<string:upvote_type>", methods=('POST',))
 @login_required
 def upvote_review(business_id, review_id, upvote_type):
@@ -584,3 +583,33 @@ def upvote_review(business_id, review_id, upvote_type):
         WHERE review_id = %s
         ''', (review_id, ))
     return redirect(url_for('restaurant', business_id=business_id))
+
+@app.route("/",methods=['GET', 'POST'])
+@app.route('/home',methods=['GET', 'POST'])
+def search():
+    form = SearchForm()
+    if form.validate_on_submit():
+        state = form.state.data
+        print(state)
+        bizs = g.conn.execute('''
+                SELECT *
+                FROM Business
+                where state = %s 
+                Limit 100
+            ''',(state, )).fetchall()
+        print(bizs)
+        if bizs:
+            return render_template('restaurant.html',  bizs = bizs)
+        else:
+            flash('No results!', 'fail')
+            return redirect(url_for('search'))
+    return render_template('search.html', form=form)
+
+    # fetch= g.conn.execute('''
+    #             SELECT name, state, city, round(AVG(stars), 2) AS average_stars
+    #             FROM Review_of_Business JOIN Business USING(business_id)
+    #             WHERE detailed_review IS NOT NULL AND is_open = True
+    #             GROUP BY business_id, name, address, city
+    #         ''').fetchall()
+    # print(stars)
+    

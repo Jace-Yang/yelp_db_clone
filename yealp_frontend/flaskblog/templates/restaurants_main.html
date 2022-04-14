@@ -3,66 +3,12 @@
 
 {% block content %}
 
-
-  
     <h1>{% block title %} Welcome to our Yealp Platform! {% endblock %}</h1>
 
-    <div cla`ss="container">
-        <div class="top-bar">
-            <div class="nav-bar">
-            </div>
-            <ul class="filter-title-bar">
-                <li class="filter-title">
-                    <span>zipcode</span>
-                    <span><i class="fa fa-angle-down"></i></span>
-                    <!-- <span class="split-line fr">|</span> -->
-                </li>
-                <li class="filter-title">
-                    <span>state</span>
-                    <span><i class="fa fa-angle-down"></i></span>
-                    <!-- <span class="split-line fr">|</span> -->
-                </li>
-                <li class="filter-title">
-                    <span></span>
-                    <span><i class="fa fa-angle-down"></i></span>
-                </li>
-            </ul>
-            <div class="filter-item-bar">
-                <div class="filter-item filter-date">
-                    <div class="input-daterange input-group">
-                        <input type="text" class="input-sm form-control" id="start-date" />
-                        <span class="input-group-addon">至</span>
-                        <input type="text" class="input-sm form-control" id="end-date" />
-                    </div>
-                </div>
-                <ul class="filter-item filter-area">
-                    
-                </ul>
-                <ul class="filter-item filter-sort">
-                    <li class="active" sort-key="new">最新上线</li>
-                    <li sort-key="booking">入住最多</li>
-                    <li sort-key="price-inc">价格 低-高</li>
-                    <li sort-key="price-des">价格 高-低</li>
-                </ul>
-            </div>
-        </div>
-        <form id="search" action="" method="post">
-            <input class="btn btn-secondary btn-lg active" type="submit b" name="search" value="search" >
-        
-        </form>
-    
     {% for biz in bizs %}
-
         <a href="{{url_for('restaurant', business_id=biz['business_id'])}}">
             <h3>{{ biz['name'] }}</h3>
         </a>
     
-
-    
-
-      
-            
-            
-        
     {% endfor %}
 {% endblock %}

@@ -20,37 +20,36 @@
   <span class="badge badge-primary">{{ restaurant['city'] }}</span>
   <p>{{ restaurant['address'] }}</p>
   
-  {% if current_user.is_authenticated %}
-    {% if collections %}
-      <form id="collection" action="" method="post">
+  
+  {% if collections %}
+    <form id="collection" action="" method="post">
 
-        <div class="form-group row">
-          <div class="col-sm-4">You have collected it in:</div>
-          <div class="col">
-            <button type="submit" class="btn btn-primary btn-sm float-right">Update collections</button>
-          </div>
-
-          <div class="container">
-            {% for collection in collections %}
-              {% if collection['biz_in'] %}
-                <div class="form-check form-check-inline mb-2 mr-sm-2">
-                  <input class="form-check-input" type="checkbox" id= "collection_id{{i}}" value="{{ collection['collection_id'] }}" name="collections_update" checked>
-                  <label class="form-check-label" for="collection_id{{i}}">{{collection['collection_id']}}</label>
-                </div>
-              {% else %}
-                <div class="form-check form-check-inline mb-2 mr-sm-2">
-                  <input class="form-check-input" type="checkbox" id= "collection_id{{i}}" value="{{ collection['collection_id'] }}" name="collections_update">
-                  <label class="form-check-label" for="collection_id{{i}}">{{collection['collection_id']}}</label>
-                </div>
-              {% endif %}
-              
-            {% endfor %}
-          </div>      
+      <div class="form-group row">
+        <div class="col-sm-4">You have collected it in:</div>
+        <div class="col">
+          <button type="submit" class="btn btn-primary btn-sm float-right">Update collections</button>
         </div>
-      </form>
-    {% else %}
-      <h2>You don't have any collection yet, please create 1</h2>
-    {% endif %}
+
+        <div class="container">
+          {% for collection in collections %}
+            {% if collection['biz_in'] %}
+              <div class="form-check form-check-inline mb-2 mr-sm-2">
+                <input class="form-check-input" type="checkbox" id= "collection_id{{i}}" value="{{ collection['collection_id'] }}" name="collections_update" checked>
+                <label class="form-check-label" for="collection_id{{i}}">{{collection['collection_id']}}</label>
+              </div>
+            {% else %}
+              <div class="form-check form-check-inline mb-2 mr-sm-2">
+                <input class="form-check-input" type="checkbox" id= "collection_id{{i}}" value="{{ collection['collection_id'] }}" name="collections_update">
+                <label class="form-check-label" for="collection_id{{i}}">{{collection['collection_id']}}</label>
+              </div>
+            {% endif %}
+            
+          {% endfor %}
+        </div>      
+      </div>
+    </form>
+  {% else %}
+    <h2>You don't have any collection yet, please create 1</h2>
   {% endif %}
     <!-- <i class="bi bi-arrow-down-circle-fill"></i>
 
