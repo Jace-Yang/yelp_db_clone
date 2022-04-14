@@ -650,23 +650,24 @@ def search():
         print(state)
         bizs = g.conn.execute('''
                 SELECT *
-                FROM Business
-                where state = %s 
-                Limit 100
+                FROM biz_with_stars
+                where state = %s
             ''',(state, )).fetchall()
         print(bizs)
+        
         if bizs:
-            return render_template('restaurant.html',  bizs = bizs)
+            return render_template('restaurants_main.html',  bizs = bizs)
         else:
             flash('No results!', 'fail')
             return redirect(url_for('search'))
     return render_template('search.html', form=form)
 
     # fetch= g.conn.execute('''
-    #             SELECT name, state, city, round(AVG(stars), 2) AS average_stars
-    #             FROM Review_of_Business JOIN Business USING(business_id)
-    #             WHERE detailed_review IS NOT NULL AND is_open = True
-    #             GROUP BY business_id, name, address, city
+                # SELECT name, state, city, round(AVG(stars), 2) AS average_stars
+                # FROM Review_of_Business JOIN Business USING(business_id)
+                # WHERE detailed_review IS NOT NULL AND is_open = True
+                # GROUP BY business_id, name, address, city
     #         ''').fetchall()
     # print(stars)
-    
+
+

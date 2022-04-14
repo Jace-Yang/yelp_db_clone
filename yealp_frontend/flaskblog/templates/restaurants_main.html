@@ -1,14 +1,9 @@
 {% extends 'layout.html' %}
 
-
 {% block content %}
-
     <h1>{% block title %} Welcome to our Yealp Platform! {% endblock %}</h1>
-
     {% for biz in bizs %}
         <a href="{{url_for('restaurant', business_id=biz['business_id'])}}">
-            <h3>{{ biz['name'] }}</h3>
-        </a>
-    
+            <h3>{{ biz['name'] }}</a> with {{biz['average_stars']}}</h3>
     {% endfor %}
 {% endblock %}
