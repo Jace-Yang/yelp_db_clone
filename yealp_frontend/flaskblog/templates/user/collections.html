@@ -5,7 +5,7 @@
 
     {% if collections %}
         {% for collection in collections %}
-        <a href="{{url_for('user_collection', collection_id = collection['collection_id'])}}">
+        <a href="{{url_for('user_collection', user_id = user['user_id'], collection_id = collection['collection_id'])}}">
             <h4>{{ collection['collection_name'] }}</h4>
         </a>
         {% endfor %}

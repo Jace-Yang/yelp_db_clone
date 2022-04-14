@@ -266,12 +266,24 @@ def restaurants():
 
 @app.route('/restaurant/<string:business_id>', methods=['GET', 'POST'])
 def restaurant(business_id):
+    def CurrentUserIsFan():
+        if not current_user.is_authenticated:
+            return False
+        is_fan = g.conn.execute('''
+            SELECT 1 FROM 
+            Users_favorite_Business 
+            WHERE user_id = %s AND business_id = %s
+            ''', (current_user.user_id, business_id)).fetchone()
+        return True if is_fan else False
+        
     restaurant = get_restaurant(business_id)
     # Load the review
     reviews = get_detailed_reviews_with_user(business_id)
+    favorite = CurrentUserIsFan()
+    collections = None
+
     if current_user.is_authenticated:
     # Load whether the user already like the restaurant
-        favorite = 0
         collections = g.conn.execute('''
             WITH one_user_collections AS(
                 SELECT user_id AS collection_owner_id, collection_id
@@ -282,14 +294,6 @@ def restaurant(business_id):
             LEFT JOIN Collection_contain_Business USING(collection_owner_id, collection_id)
             GROUP BY collection_id
             ORDER BY collection_id''', (current_user.user_id, business_id)).fetchall()
-    
-        favorite = g.conn.execute('''
-                    SELECT 1 FROM 
-                    Users_favorite_Business 
-                    WHERE user_id = %s AND business_id = %s
-                    ''', (current_user.user_id, business_id)).fetchone()
-        if favorite:
-            favorite = 1
         
         if request.method == "POST" and request.form.get('favorite_action') == 'Favorite the restaurant':
             print(request.form)
@@ -297,7 +301,7 @@ def restaurant(business_id):
                         INSERT INTO Users_favorite_Business(user_id, business_id) 
                         VALUES (%s, %s)''',
                     (current_user.user_id, business_id))
-            favorite = 1
+            favorite = CurrentUserIsFan()
             return render_template("restaurant.html", restaurant=restaurant, reviews=reviews, favorite=favorite, collections=collections)
         if request.method == "POST" and request.form.get('favorite_action') == 'Unfavorite the restaurant':
             print(request.form)
@@ -305,7 +309,7 @@ def restaurant(business_id):
                             DELETE FROM Users_favorite_Business 
                             WHERE user_id = %s AND business_id = %s''',
                         (current_user.user_id, business_id))
-            favorite = 0
+            favorite = CurrentUserIsFan()
             return render_template("restaurant.html", restaurant=restaurant, reviews=reviews, favorite=favorite, collections=collections)
 
         if request.method == "POST"  and 'collections_update' in request.form:
@@ -453,8 +457,8 @@ def user_followees():
     print(followees)
     return render_template('user/followees.html', followees=followees)
 
-@app.route("/user/collections/", methods=['GET', 'POST'])
-def user_collections():
+@app.route("/user/<string:user_id>/collections", methods=['GET', 'POST'])
+def user_collections(user_id):
     def get_collections_by_user(user_id):
     # http://127.0.0.1:5000/user/9Xmw_WcUCShPD0qGO1UD7w/collection/1
         collections = g.conn.execute('''
@@ -470,15 +474,15 @@ def user_collections():
             ''', 
             (user_id, )).fetchall()
         return collections
-    user = get_current_user()
-    collections = get_collections_by_user(current_user.user_id)
+    user = get_user(user_id)
+    collections = get_collections_by_user(user_id)
     
     # Create a new collection
     if request.method == "POST" and 'create_new_collection' in request.form:
         created_date = date.today().strftime("%Y-%m-%d")
         current_collections = g.conn.execute('''
             SELECT * FROM Collection_of_User WHERE user_id = %s''',
-            (current_user.user_id, )).fetchall()
+            (user_id, )).fetchall()
         if current_collections:
             new_id = max([collection['collection_id'] for collection in current_collections]) + 1
         else:
@@ -486,16 +490,16 @@ def user_collections():
         g.conn.execute('''
             INSERT INTO Collection_of_User(user_id, collection_id, created_date) 
             VALUES (%s, %s, %s)''',
-            (current_user.user_id, new_id, created_date))
-        collections = get_collections_by_user(current_user.user_id)
+            (user_id, new_id, created_date))
+        collections = get_collections_by_user(user_id)
         return render_template("user/collections.html", user=user,  collections = collections)
 
     return render_template('user/collections.html', user=user,  collections = collections)
 
-@app.route("/user/collection/<int:collection_id>")
-def user_collection(collection_id):
+@app.route("/user/<string:user_id>/collection/<int:collection_id>")
+def user_collection(user_id, collection_id):
     # http://127.0.0.1:5000/user/9Xmw_WcUCShPD0qGO1UD7w/collection/1
-    user = g.conn.execute('SELECT * FROM USERS WHERE user_id = %s', (current_user.user_id, )).fetchone()
+    user = g.conn.execute('SELECT * FROM USERS WHERE user_id = %s', (user_id, )).fetchone()
     bizs_in_collection = g.conn.execute('''
         WITH bizs_in_collections AS(
             SELECT *
@@ -503,7 +507,7 @@ def user_collection(collection_id):
             WHERE collection_owner_id = %s AND collection_id = %s)
         SELECT *
         FROM bizs_in_collections JOIN Business USING(business_id)''', 
-        (current_user.user_id, collection_id)).fetchall()
+        (user_id, collection_id)).fetchall()
     collection = g.conn.execute('''
         WITH one_collection AS(
             SELECT user_id AS collection_owner_id, collection_id, created_date
@@ -524,7 +528,7 @@ def user_collection(collection_id):
         FROM one_collection_n_fan 
             LEFT JOIN Collection_contain_Business USING(collection_owner_id, collection_id)
         GROUP BY collection_owner_id, collection_id, created_date, n_fans''', 
-        (current_user.user_id, collection_id)).fetchone()
+        (user_id, collection_id)).fetchone()
     print(collection)
     return render_template('user/collection.html', user=user,  bizs=bizs_in_collection, collection=collection)
 

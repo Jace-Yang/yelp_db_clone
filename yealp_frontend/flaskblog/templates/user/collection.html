@@ -1,7 +1,18 @@
 {% extends 'layout.html' %}
 
 {% block content %}
-    <h2 class="mb-3">{{ collection['collection_name'] }} by {{ user['name'] }} </h2>
+
+    {% if current_user.is_authenticated %}
+      <form id="favorate" action="" method="post">
+      {% if favorite == 1 %}
+        <input class="btn btn-secondary float-right btn-sm mt-2" type="submit" name="favorite_action" value="Unollow the collection" >
+      {% else %}
+        <input class="btn btn-primary float-right btn-sm mt-2" type="submit" name="favorite_action" value="Follow the collection" >
+      {% endif %}
+    </form>
+    {% endif %}
+    
+    <h4 class="mb-3">{{ collection['collection_name'] }} by {{ user['name'] }} </h4>
 
 
     <ul>
@@ -21,7 +32,7 @@
     {% if bizs %}
         {% for biz in bizs %}
         <a href="{{url_for('restaurant', business_id=biz['business_id'])}}">
-            <h4>{{ biz['name'] }}</h4>
+            <h6>{{ biz['name'] }}</h6>
         </a>
         {% endfor %}
     {% endif %}
