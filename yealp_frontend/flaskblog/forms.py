@@ -101,6 +101,30 @@ class SearchForm(FlaskForm):
     #zipcode = TextAreaField('Content', validators=[DataRequired(), Length(min=30)])
     submit = SubmitField('Search')
 
+# class FilterForm(FlaskForm):
+#     from sqlalchemy import create_engine
+#     SUBMIT = True
+#     if not SUBMIT:
+#         DATABASEURI = "postgresql://jy3174:JaceYJH@w4111.cisxo09blonu.us-east-1.rds.amazonaws.com/proj1part2"
+#     else:
+#         DATABASEURI = "postgresql://by2325:0316@w4111.cisxo09blonu.us-east-1.rds.amazonaws.com/proj1part2"
+#     engine = create_engine(DATABASEURI)
+#     conn = engine.connect()
+#     STATES_OPTIONS = engine.execute('''
+#                 SELECT average_stars
+#                 FROM
+#                 GROUP BY state
+#             ''').fetchall()
+#     STATES_OPTIONS = [(state['state'], state['state']) for state in STATES_OPTIONS]
+#     print(STATES_OPTIONS)
+#     state = SelectField('States', choices=STATES_OPTIONS)
+#     # STARS_OPTIONS = [(i/2, str(i/2) + ' stars' if i != 2 else str(i/2) + ' star') for i in list(range(11))]
+#     # star = SelectField('Stars', choices=STARS_OPTIONS,  coerce=float)
+#     # print(STARS_OPTIONS)
+#     #zipcode = TextAreaField('Content', validators=[DataRequired(), Length(min=30)])
+#     submit = SubmitField('Search')
+
+
 
 class RequestResetForm(FlaskForm):
     email = StringField('Email',
