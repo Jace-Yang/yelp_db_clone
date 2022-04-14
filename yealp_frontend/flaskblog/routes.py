@@ -280,17 +280,8 @@ def restaurant(business_id):
     # Load the review
     reviews = get_detailed_reviews_with_user(business_id)
     tips = g.conn.execute('''
-        WITH one_restaurant AS (
-            SELECT *
-            FROM Review_of_Business
-            WHERE short_tip IS NOT NULL)
-        SELECT business_id, review_id, Users.name as username, short_tip, stars, user_id,
-               detailed_review, review_date,
-               useful, funny, cool	
-        FROM one_restaurant
-            LEFT JOIN Users_write_Review USING(review_id)
-            LEFT JOIN Users USING(user_id)
-        ORDER BY review_date DESC''', (business_id, )).fetchall()
+        SELECT * FROM tips_wide
+        WHERE business_id = %s''', (business_id, )).fetchall()
     print(tips)
     favorite = CurrentUserIsFan()
     collections = None

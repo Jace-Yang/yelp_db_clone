@@ -1,6 +1,11 @@
 {% extends 'layout.html' %}
 
+
 {% block content %}
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tether/1.4.0/js/tether.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js"></script>
 
   {% if current_user.is_authenticated %}
       <form id="favorate" action="" method="post">
@@ -47,73 +52,93 @@
   {% else %}
     <h2>You don't have any collection yet, please create 1</h2>
   {% endif %}
-    <!-- <i class="bi bi-arrow-down-circle-fill"></i>
-
-    <label class="custom-toggle">
-      <input type="checkbox">
-      <span class="custom-toggle-slider rounded-circle"></span>
-    </label>
-    <span class="clearfix"></span>
-    <label class="custom-toggle">
-      <input type="checkbox" checked>
-      <span class="custom-toggle-slider rounded-circle"></span>
-    </label>
-
-
-    <link href="https://gitcdn.github.io/bootstrap-toggle/2.2.2/css/bootstrap-toggle.min.css" rel="stylesheet">
-    <script src="https://gitcdn.github.io/bootstrap-toggle/2.2.2/js/bootstrap-toggle.min.js"></script>
-    <input type="checkbox" checked data-toggle="toggle">
-
-    <style>
-      .toggle.ios, .toggle-on.ios, .toggle-off.ios { border-radius: 20px; }
-      .toggle.ios .toggle-handle { border-radius: 20px; }
-    </style>
-    <input type="checkbox" checked data-toggle="toggle" data-style="ios">
-    -->
+    
     
     <HR style="border:4 double #983636" width="40%" color=#983636 SIZE=5>
 
-  <a class="m-1" href="{{ url_for('create_review', business_id=restaurant['business_id']) }}">Submit new review</a>
-  <a class="m-1" href="{{ url_for('create_review', business_id=restaurant['business_id']) }}">Submit new tips</a>
+      <ul class="nav nav-tabs" role="tablist">
+        <li class="nav-item">
+            <a class="nav-link active" data-toggle="tab" href="#Reviews" role="tab">Reviews</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-toggle="tab" href="#Tips" role="tab">Tips</a>
+        </li>
+    </ul>
+    
+    <!-- Tab panes -->
+    <div class="tab-content">
+        <div class="tab-pane active" id="Reviews" role="tabpanel">
+          <a class="m-1" href="{{ url_for('create_review', business_id=restaurant['business_id']) }}">Submit new review</a>
+          {% for review in reviews %}
+            <article class="media content-section">
+              <img class="rounded-circle article-img" src="{{ url_for('static', filename='profile_pics/default.jpg') }}">
+              <div class="media-body">
+                <div class="article-metadata">
+                  <a class="mr-1" href="{{ url_for('user_main', user_id=review['user_id']) }}">{{ review['username'] }}</a>
+                  <span class="badge badge-primary">Stars: {{review['stars']}}</span>
+
+                  <small class="text-muted">{{ review['review_date'].strftime('%Y-%m-%d') }}</small>
+                </div>  
+                <p class="article-content">{{ review['detailed_review'] }}</p>
+                
+                {% if current_user.user_id == review['user_id'] %}
+                  <form action="{{ url_for('delete_review', review_id = review['review_id'], business_id=restaurant['business_id']) }}" method="POST">
+                    <input type="submit" value="Delete" class="btn btn-danger btn-sm"
+                        onclick="return confirm('Are you sure you want to delete your review?')">
+                  </form>  
+                {% else %}
+                  <div style="display: flex;">
+                    <form action="{{ url_for('upvote_review', review_id = review['review_id'], business_id=restaurant['business_id'], upvote_type = 'useful') }}" method="POST">
+                      <input class="btn btn-primary btn-sm m-1" type="submit" value="Userful: {{review['useful']}}" >
+                    </form>
+                    <form action="{{ url_for('upvote_review', review_id = review['review_id'], business_id=restaurant['business_id'], upvote_type = 'funny') }}" method="POST">
+                      <input class="btn btn-info btn-sm m-1" type="submit" value="Funny: {{review['funny']}}" >
+                    </form>
+                    <form action="{{ url_for('upvote_review', review_id = review['review_id'], business_id=restaurant['business_id'], upvote_type = 'cool') }}" method="POST">
+                      <input class="btn btn-success btn-sm m-1" type="submit" value="Cool: {{review['cool']}}" >
+                    </form>
+                  </div>
+                {% endif %}
+              </div>
+            </article>
+          {% endfor %}
+        </div>
+        <div class="tab-pane" id="Tips" role="tabpanel">
+          <a class="m-1" href="{{ url_for('create_review', business_id=restaurant['business_id']) }}">Submit new tips</a>
+
+          {% for tip in tips %}
+            <article class="media content-section">
+              <img class="rounded-circle article-img" src="{{ url_for('static', filename='profile_pics/default.jpg') }}">
+              <div class="media-body">
+                <div class="article-metadata">
+                  <a class="mr-1" href="{{ url_for('user_main', user_id=tip['user_id']) }}">{{ tip['username'] }}</a>
+                  <small class="text-muted">{{ tip['review_date'].strftime('%Y-%m-%d') }}</small>
+                </div>  
+                <p class="article-content">{{ tip['short_tip'] }}</p>
+                
+                {% if current_user.user_id == tip['user_id'] %}
+                  <form action="{{ url_for('delete_review', review_id = tip['review_id'], business_id=restaurant['business_id']) }}" method="POST">
+                    <input type="submit" value="Delete" class="btn btn-danger btn-sm"
+                        onclick="return confirm('Are you sure you want to delete your review?')">
+                  </form>  
+                {% else %}
+                  <div style="display: flex;">
+                    <form action="{{ url_for('upvote_tip', review_id = review['review_id'], business_id=restaurant['business_id'], upvote_type = 'like') }}" method="POST">
+                      <input class="btn btn-primary btn-sm m-1" type="submit" value="Likes: {{tip['likes']}}" >
+                    </form>
+                  </div>
+                {% endif %}
+              </div>
+            </article>
+          {% endfor %}
+        </div>
+    </div>
+
+    
   
-
   
-  {% for review in reviews %}
-    <article class="media content-section">
-      <img class="rounded-circle article-img" src="{{ url_for('static', filename='profile_pics/default.jpg') }}">
-      <div class="media-body">
-        <div class="article-metadata">
-          <a class="mr-1" href="{{ url_for('user_main', user_id=review['user_id']) }}">{{ review['username'] }}</a>
-          <span class="badge badge-primary">Stars: {{review['stars']}}</span>
-
-          <small class="text-muted">{{ review['review_date'].strftime('%Y-%m-%d') }}</small>
-        </div>  
-        <p class="article-content">{{ review['detailed_review'] }}</p>
-        
-        {% if current_user.user_id == review['user_id'] %}
-          <form action="{{ url_for('delete_review', review_id = review['review_id'], business_id=restaurant['business_id']) }}" method="POST">
-            <input type="submit" value="Delete" class="btn btn-danger btn-sm"
-                onclick="return confirm('Are you sure you want to delete your review?')">
-          </form>  
-        {% else %}
-          <div style="display: flex;">
-            <form action="{{ url_for('upvote_review', review_id = review['review_id'], business_id=restaurant['business_id'], upvote_type = 'useful') }}" method="POST">
-              <input class="btn btn-primary btn-sm m-1" type="submit" value="Userful: {{review['useful']}}" >
-            </form>
-            <form action="{{ url_for('upvote_review', review_id = review['review_id'], business_id=restaurant['business_id'], upvote_type = 'funny') }}" method="POST">
-              <input class="btn btn-info btn-sm m-1" type="submit" value="Funny: {{review['funny']}}" >
-            </form>
-            <form action="{{ url_for('upvote_review', review_id = review['review_id'], business_id=restaurant['business_id'], upvote_type = 'cool') }}" method="POST">
-              <input class="btn btn-success btn-sm m-1" type="submit" value="Cool: {{review['cool']}}" >
-            </form>
-          </div>
-        {% endif %}
-
-        
-
-      </div>
-      
-    </article>
-  {% endfor %}
+  
+  
+  
 
 {% endblock %}
