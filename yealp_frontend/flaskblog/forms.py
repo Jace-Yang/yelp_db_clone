@@ -4,7 +4,8 @@ from flask_login import current_user
 from wtforms import StringField, PasswordField, SubmitField, BooleanField, TextAreaField, SelectField
 from wtforms.validators import DataRequired, Length, Email, EqualTo, ValidationError
 from flaskblog.models import User
-
+from flaskblog import app, db,engine
+from flask import render_template, url_for, flash, redirect, request, abort, g, session
 
 class RegistrationForm(FlaskForm):
     username = StringField('Username',
@@ -74,6 +75,32 @@ class ReviewForm(FlaskForm):
     star = SelectField('Stars', choices=STARTS_OPTIONS,  coerce=float)
     content = TextAreaField('Content', validators=[DataRequired(), Length(min=30)])
     submit = SubmitField('Post')
+
+
+class SearchForm(FlaskForm):
+    conn = engine.connect()
+    STATES_OPTIONS = conn.execute('''
+                SELECT state
+                FROM Business
+                GROUP BY state
+            ''').fetchall()
+    STATES_OPTIONS = [state['state'] for state in STATES_OPTIONS]
+    print(STATES_OPTIONS)
+    state = SelectField('States', choices=STATES_OPTIONS)
+    # STARS_OPTIONS = g.conn.execute('''
+    #             SELECT name, address, city, round(AVG(stars), 2) AS average_stars
+    #             FROM Review_of_Business JOIN Business USING(business_id)
+    #             WHERE detailed_review IS NOT NULL AND is_open = True
+    #             GROUP BY business_id, name, address, city
+    #         ''').fetchall()
+    # print(STARS_OPTIONS)
+    STARS_OPTIONS = [(i/2, str(i/2) + ' stars' if i != 2 else str(i/2) + ' star') for i in list(range(11))]
+    star = SelectField('Stars', choices=STARS_OPTIONS,  coerce=float)
+    print(STARS_OPTIONS)
+    #zipcode = TextAreaField('Content', validators=[DataRequired(), Length(min=30)])
+    state = SelectField('States', choices=STATES_OPTIONS)
+    submit = SubmitField('Search')
+
 
 class RequestResetForm(FlaskForm):
     email = StringField('Email',
