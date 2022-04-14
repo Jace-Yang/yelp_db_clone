@@ -260,7 +260,7 @@ def reset_token(token):
 @app.route('/restaurants') 
 def restaurants():
     bizs = g.conn.execute('''
-    SELECT * FROM biz_with_stars LIMIT 50
+        SELECT * FROM Business LIMIT 50
     ''').fetchall()
     return render_template('restaurants_main.html', bizs=bizs)  
 
@@ -279,6 +279,19 @@ def restaurant(business_id):
     restaurant = get_restaurant(business_id)
     # Load the review
     reviews = get_detailed_reviews_with_user(business_id)
+    tips = g.conn.execute('''
+        WITH one_restaurant AS (
+            SELECT *
+            FROM Review_of_Business
+            WHERE short_tip IS NOT NULL)
+        SELECT business_id, review_id, Users.name as username, short_tip, stars, user_id,
+               detailed_review, review_date,
+               useful, funny, cool	
+        FROM one_restaurant
+            LEFT JOIN Users_write_Review USING(review_id)
+            LEFT JOIN Users USING(user_id)
+        ORDER BY review_date DESC''', (business_id, )).fetchall()
+    print(tips)
     favorite = CurrentUserIsFan()
     collections = None
 
@@ -298,31 +311,32 @@ def restaurant(business_id):
         if request.method == "POST" and request.form.get('favorite_action') == 'Favorite the restaurant':
             print(request.form)
             g.conn.execute('''
-                        INSERT INTO Users_favorite_Business(user_id, business_id) 
-                        VALUES (%s, %s)''',
-                    (current_user.user_id, business_id))
+                INSERT INTO Users_favorite_Business(user_id, business_id) 
+                VALUES (%s, %s)''',
+                (current_user.user_id, business_id))
             favorite = CurrentUserIsFan()
-            return render_template("restaurant.html", restaurant=restaurant, reviews=reviews, favorite=favorite, collections=collections)
+            #return render_template("restaurant.html", restaurant=restaurant, reviews=reviews, favorite=favorite, collections=collections)
+            
         if request.method == "POST" and request.form.get('favorite_action') == 'Unfavorite the restaurant':
             print(request.form)
             g.conn.execute('''
-                            DELETE FROM Users_favorite_Business 
-                            WHERE user_id = %s AND business_id = %s''',
-                        (current_user.user_id, business_id))
+                DELETE FROM Users_favorite_Business 
+                WHERE user_id = %s AND business_id = %s''',
+                (current_user.user_id, business_id))
             favorite = CurrentUserIsFan()
-            return render_template("restaurant.html", restaurant=restaurant, reviews=reviews, favorite=favorite, collections=collections)
+            #return render_template("restaurant.html", restaurant=restaurant, reviews=reviews, favorite=favorite, collections=collections)
 
         if request.method == "POST"  and 'collections_update' in request.form:
             current_collections = request.form.getlist('collections_update')
             # Delete all original collections
             g.conn.execute('''
-                            DELETE FROM Collection_contain_Business 
-                            WHERE collection_owner_id = %s AND business_id = %s''',
-                        (current_user.user_id, business_id))
+                DELETE FROM Collection_contain_Business 
+                WHERE collection_owner_id = %s AND business_id = %s''',
+                (current_user.user_id, business_id))
             for collection in current_collections:
                 g.conn.execute('''
-                                INSERT INTO Collection_contain_Business(collection_owner_id, collection_id, business_id) VALUES(%s, %s, %s)''',
-                                (current_user.user_id, int(collection), business_id))
+                    INSERT INTO Collection_contain_Business(collection_owner_id, collection_id, business_id) VALUES(%s, %s, %s)''',
+                    (current_user.user_id, int(collection), business_id))
 
             collections = g.conn.execute('''
                 WITH one_user_collections AS(
@@ -334,9 +348,9 @@ def restaurant(business_id):
                 LEFT JOIN Collection_contain_Business USING(collection_owner_id, collection_id)
                 GROUP BY collection_id
                 ORDER BY collection_id''', (current_user.user_id, business_id)).fetchall()
-            return render_template("restaurant.html", restaurant=restaurant, reviews=reviews, favorite=favorite, collections=collections)
+            #return render_template("restaurant.html", restaurant=restaurant, reviews=reviews, favorite=favorite, collections=collections)
 
-    return render_template('restaurant.html', restaurant=restaurant, reviews=reviews, favorite=favorite, collections=collections)
+    return render_template('restaurant.html', restaurant=restaurant, reviews=reviews, tips = tips, favorite=favorite, collections=collections)
 
 @app.route("/user_account", methods=['GET', 'POST'])
 @login_required
@@ -629,7 +643,6 @@ def delete_review(business_id, review_id):
         ''', (review_id, ))
     return redirect(url_for('restaurant', business_id=business_id))
 
-
 @app.route("/restaurant/<string:business_id>/review/<string:review_id>/upvote/<string:upvote_type>", methods=('POST',))
 @login_required
 def upvote_review(business_id, review_id, upvote_type):
@@ -661,13 +674,3 @@ def search():
             flash('No results!', 'fail')
             return redirect(url_for('search'))
     return render_template('search.html', form=form)
-
-    # fetch= g.conn.execute('''
-                # SELECT name, state, city, round(AVG(stars), 2) AS average_stars
-                # FROM Review_of_Business JOIN Business USING(business_id)
-                # WHERE detailed_review IS NOT NULL AND is_open = True
-                # GROUP BY business_id, name, address, city
-    #         ''').fetchall()
-    # print(stars)
-
-
