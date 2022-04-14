@@ -3,20 +3,14 @@
 
 {% block content %}
 
-
+    <h3>Here are all the collections you favorited!</h3>
   
-    <h1>{% block title %} Here are all the restaurants you favorited! {% endblock %}</h1>
+    <h3>Here are all the restaurants you favorited!</h3>
 
     {% for biz in bizs %}
         <a href="{{url_for('restaurant', business_id=biz['business_id'])}}">
-            <h3>{{ biz['name'] }}</h3>
+            <h6>{{ biz['name'] }}</h6>
         </a>
-    
-    
-
-      
-            
-            
         
     {% endfor %}
 {% endblock %}

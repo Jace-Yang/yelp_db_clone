@@ -492,23 +492,25 @@ def user_collections(user_id):
             VALUES (%s, %s, %s)''',
             (user_id, new_id, created_date))
         collections = get_collections_by_user(user_id)
-        return render_template("user/collections.html", user=user,  collections = collections)
+        return render_template("user/collections.html", title='collections', user=user,  collections = collections)
 
-    return render_template('user/collections.html', user=user,  collections = collections)
+    return render_template('user/collections.html', title='collections', user=user,  collections = collections)
 
-@app.route("/user/<string:user_id>/collection/<int:collection_id>")
+@app.route("/user/<string:user_id>/collection/<int:collection_id>", methods=['GET', 'POST'])
 def user_collection(user_id, collection_id):
     # http://127.0.0.1:5000/user/9Xmw_WcUCShPD0qGO1UD7w/collection/1
-    user = g.conn.execute('SELECT * FROM USERS WHERE user_id = %s', (user_id, )).fetchone()
-    bizs_in_collection = g.conn.execute('''
-        WITH bizs_in_collections AS(
-            SELECT *
-            FROM Collection_contain_Business
-            WHERE collection_owner_id = %s AND collection_id = %s)
-        SELECT *
-        FROM bizs_in_collections JOIN Business USING(business_id)''', 
-        (user_id, collection_id)).fetchall()
-    collection = g.conn.execute('''
+
+    def CurrentUserIsFan():
+        if not current_user.is_authenticated:
+            return False
+        is_fan = g.conn.execute('''
+            SELECT 1 FROM 
+            Users_follow_Collection 
+            WHERE fan_user_id = %s AND followee_user_id = %s AND collection_id = %s
+            ''', (current_user.user_id, user_id, collection_id)).fetchone()
+        return True if is_fan else False
+    def get_collection():
+        collection = g.conn.execute('''
         WITH one_collection AS(
             SELECT user_id AS collection_owner_id, collection_id, created_date
             FROM Collection_of_User
@@ -529,8 +531,45 @@ def user_collection(user_id, collection_id):
             LEFT JOIN Collection_contain_Business USING(collection_owner_id, collection_id)
         GROUP BY collection_owner_id, collection_id, created_date, n_fans''', 
         (user_id, collection_id)).fetchone()
-    print(collection)
-    return render_template('user/collection.html', user=user,  bizs=bizs_in_collection, collection=collection)
+        return collection
+    is_fan = CurrentUserIsFan()
+    user = g.conn.execute('SELECT * FROM USERS WHERE user_id = %s', (user_id, )).fetchone()
+    bizs_in_collection = g.conn.execute('''
+        WITH bizs_in_collections AS(
+            SELECT *
+            FROM Collection_contain_Business
+            WHERE collection_owner_id = %s AND collection_id = %s)
+        SELECT *
+        FROM bizs_in_collections JOIN Business USING(business_id)''', 
+        (user_id, collection_id)).fetchall()
+    collection = get_collection()
+
+    # Follow button interaction
+    if request.method == "POST":
+        if not current_user.is_authenticated:
+            return redirect(url_for('login'))
+
+        # Execute the follow request
+        if request.form.get('follow_button') == 'Follow the collection':
+            g.conn.execute('''
+                INSERT INTO Users_follow_Collection(fan_user_id, followee_user_id, collection_id) 
+                VALUES (%s, %s, %s)''',
+                (current_user.user_id, user_id, collection_id))
+            is_fan = True
+            collection = get_collection()
+            return render_template('user/collection.html', title='collection', user=user, bizs=bizs_in_collection, collection=collection, is_fan=is_fan)
+
+        # Execute the Unfollow request
+        if request.form.get('follow_button') == 'Unfollow the collection':
+            g.conn.execute('''
+                DELETE FROM Users_follow_Collection 
+                WHERE fan_user_id = %s AND followee_user_id = %s AND collection_id = %s''',
+                (current_user.user_id, user_id, collection_id))
+            is_fan = False
+            collection = get_collection()
+            return render_template('user/collection.html', title='collection', user=user, bizs=bizs_in_collection, collection=collection, is_fan=is_fan)
+
+    return render_template('user/collection.html', title='collection', user=user, bizs=bizs_in_collection, collection=collection, is_fan=is_fan)
 
 
 @app.route("/restaurant/<string:business_id>/review/new", methods=['GET', 'POST'])
