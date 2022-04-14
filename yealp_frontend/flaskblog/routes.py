@@ -260,7 +260,7 @@ def reset_token(token):
 @app.route('/restaurants') 
 def restaurants():
     bizs = g.conn.execute('''
-    SELECT * FROM biz_with_stars LIMIT 50
+    SELECT * FROM business_wide LIMIT 50
     ''').fetchall()
     return render_template('restaurants_main.html', bizs=bizs)  
 
@@ -650,7 +650,12 @@ def search():
         print(state)
         bizs = g.conn.execute('''
                 SELECT *
-                FROM biz_with_stars
+                FROM business_wide
+                JOIN (SELECT business_id, array_agg(name) as category_names
+                FROM Business_tagged_Category
+                GROUP BY business_id) as tmp
+                
+                using(business_id)
                 where state = %s
             ''',(state, )).fetchall()
         print(bizs)

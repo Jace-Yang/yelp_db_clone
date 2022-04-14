@@ -22,3 +22,19 @@ def get_detailed_reviews_with_user(business_id):
             LEFT JOIN Users USING(user_id)
         ORDER BY review_date DESC''', (business_id, )).fetchall()
     return reviews
+
+def get_filter_business():
+    restaurants = g.conn.execute('''
+    With bizs_id_in_one_state as(
+                    SELECT *
+                    FROM Business
+                    where state = %s
+                ),
+                bizs_in_one_state as(
+                    SELECT business_id, round(AVG(stars), 2) AS average_stars
+                    FROM Review_of_Business JOIN bizs_id_in_one_state USING(business_id)
+                    WHERE detailed_review IS NOT NULL
+                    GROUP BY business_id)
+                SELECT * 
+                FROM bizs_in_one_state RIGHT JOIN bizs_id_in_one_state USING(business_id)
+    ''')
