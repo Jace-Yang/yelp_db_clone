@@ -1,0 +1,33 @@
+{% extends 'layout.html' %}
+
+
+{% block content %}
+    <div class="content-section">
+        <form method="POST" action="">
+            {{ form.hidden_tag() }}
+            <fieldset class="form-group">
+                <legend class="border-bottom mb-4">{{ legend }}</legend>
+                <div class="form-group">
+                    
+                        
+                    <div class="input-group-prepend">
+                        {{ form.state.label(class="form-control-lg m-1.75") }}
+                        {% if form.state.errors %}
+                            {{ form.state(class="form-control form-control-lg is-invalid") }}
+                            <div class="invalid-feedback">
+                                {% for error in form.state.errors %}
+                                    <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            {{ form.state(class="form-control form-control-lg") }}
+                        {% endif %}
+            
+            </fieldset>
+            <div class="form-group">
+                {{ form.submit(class="btn btn-danger btn ") }}
+              
+            </div>
+        </form>
+    </div>
+{% endblock %}

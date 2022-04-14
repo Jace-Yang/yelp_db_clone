@@ -77,28 +77,28 @@ class ReviewForm(FlaskForm):
     submit = SubmitField('Post')
 
 
+    
 class SearchForm(FlaskForm):
+    from sqlalchemy import create_engine
+    SUBMIT = True
+    if not SUBMIT:
+        DATABASEURI = "postgresql://jy3174:JaceYJH@w4111.cisxo09blonu.us-east-1.rds.amazonaws.com/proj1part2"
+    else:
+        DATABASEURI = "postgresql://by2325:0316@w4111.cisxo09blonu.us-east-1.rds.amazonaws.com/proj1part2"
+    engine = create_engine(DATABASEURI)
     conn = engine.connect()
-    STATES_OPTIONS = conn.execute('''
+    STATES_OPTIONS = engine.execute('''
                 SELECT state
                 FROM Business
                 GROUP BY state
             ''').fetchall()
-    STATES_OPTIONS = [state['state'] for state in STATES_OPTIONS]
+    STATES_OPTIONS = [(state['state'], state['state']) for state in STATES_OPTIONS]
     print(STATES_OPTIONS)
     state = SelectField('States', choices=STATES_OPTIONS)
-    # STARS_OPTIONS = g.conn.execute('''
-    #             SELECT name, address, city, round(AVG(stars), 2) AS average_stars
-    #             FROM Review_of_Business JOIN Business USING(business_id)
-    #             WHERE detailed_review IS NOT NULL AND is_open = True
-    #             GROUP BY business_id, name, address, city
-    #         ''').fetchall()
+    # STARS_OPTIONS = [(i/2, str(i/2) + ' stars' if i != 2 else str(i/2) + ' star') for i in list(range(11))]
+    # star = SelectField('Stars', choices=STARS_OPTIONS,  coerce=float)
     # print(STARS_OPTIONS)
-    STARS_OPTIONS = [(i/2, str(i/2) + ' stars' if i != 2 else str(i/2) + ' star') for i in list(range(11))]
-    star = SelectField('Stars', choices=STARS_OPTIONS,  coerce=float)
-    print(STARS_OPTIONS)
     #zipcode = TextAreaField('Content', validators=[DataRequired(), Length(min=30)])
-    state = SelectField('States', choices=STATES_OPTIONS)
     submit = SubmitField('Search')
 
 
