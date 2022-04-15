@@ -2,10 +2,36 @@
 
 {% block content %}
     <h1>{% block title %} Welcome to our Yealp Platform! {% endblock %}</h1>
-
+    
     {% for biz in bizs %}
         <article class="media content-section">
-            <img class="rounded-circle article-img" src="{{ url_for('static', filename='profile_pics/default.jpg') }}">
+            <!-- {% for photo in biz['photo_ids'] %}
+                <img class="rounded-circle article-img" src="{{ url_for('static', filename='business_photos/' + photo|string + '.jpg') }}">
+            {% endfor %} -->
+
+            <div id="carouselExampleIndicators" class="carousel slide" data-ride="carousel">
+                <ol class="carousel-indicators">
+                  <li data-target="#carouselExampleIndicators" data-slide-to="0" class="active"></li>
+                  <li data-target="#carouselExampleIndicators" data-slide-to="1"></li>
+                  <li data-target="#carouselExampleIndicators" data-slide-to="2"></li>
+                </ol>
+                <div class="carousel-inner">
+                    {% for photo in biz['photo_ids'] %}
+                        <div class="carousel-item active">
+                            <img class="rounded-circle article-img" src="{{ url_for('static', filename='business_photos/' + photo|string + '.jpg') }}" alt="{{biz['business_id']}}">
+                        </div>
+                    {% endfor %}
+                </div>
+                <a class="carousel-control-prev" href="#carouselExampleIndicators" role="button" data-slide="prev">
+                  <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                  <span class="sr-only">Previous</span>
+                </a>
+                <a class="carousel-control-next" href="#carouselExampleIndicators" role="button" data-slide="next">
+                  <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                  <span class="sr-only">Next</span>
+                </a>
+              </div>
+
             <div class="container-fluid">
                 <div id="carouselExampleControls" class="carousel slide" data-ride="carousel">
                     
@@ -38,6 +64,11 @@
                     {% for category in biz['category_names'] -%}
                         <p>{{ category }}<p/>
                     {%- endfor %} 
+
+                    <p>City: {{ biz['city'] }}</p>
+                    <p>Address: {{biz['address'] }}</p>
+                    <p>IsTakeout: {{biz['is_takeout'] }}</p>
+                    <p>IsOpen: {{biz['is_open'] }}</p>
                 </div>
                 
             </div>

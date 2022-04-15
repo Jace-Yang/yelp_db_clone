@@ -696,14 +696,9 @@ def search():
         print(state)
         conn = engine.connect()
         bizs = conn.execute('''
-                SELECT *
-                FROM business_wide
-                JOIN (SELECT business_id, array_agg(name) as category_names
-                FROM Business_tagged_Category
-                GROUP BY business_id) as tmp
-                
-                using(business_id)
-                where state = %s
+            SELECT *
+            FROM business_wide
+            where state = %s
             ''',(state, )).fetchall()
         conn.close()
         
