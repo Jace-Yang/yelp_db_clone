@@ -104,7 +104,7 @@ def login():
         if user and user['password'] == form.password.data:
             next_page = request.args.get('next')
             login_user(Yealper(user))
-            return redirect(next_page) if next_page else redirect(url_for('home'))
+            return redirect(next_page) if next_page else redirect(url_for('search'))
         else:
             flash('Login Unsuccessful. Please check email and password', 'danger')
     return render_template('login.html', title='Login', form=form)
@@ -113,7 +113,7 @@ def login():
 @app.route("/logout")
 def logout():
     logout_user()
-    return redirect(url_for('home'))
+    return redirect(url_for('search'))
 
 
 def save_picture(form_picture):
@@ -277,7 +277,9 @@ def restaurant(business_id, show = 'review'):
             ''', (current_user.user_id, business_id)).fetchone()
         return True if is_fan else False
         
-    restaurant = get_restaurant(business_id)
+    restaurant = g.conn.execute('''
+        SELECT * FROM business_wide WHERE business_id = %s
+    ''', business_id).fetchone()
     # Load the review
     reviews =  g.conn.execute('''
         SELECT * FROM reviews_wide
@@ -346,17 +348,23 @@ def restaurant(business_id, show = 'review'):
 
     return render_template('restaurant.html', restaurant=restaurant, reviews=reviews, tips = tips, favorite=favorite, collections=collections, show = show)
 
-@app.route('/restaurant/<string:business_id>/new_collection', methods=['GET', 'POST'])
+@app.route('/restaurant/<string:business_id>/<string:show>/new_collection', methods=['GET', 'POST'])
 @login_required
 def create_collection_in_restaurant(business_id, show):
 
     created_date = date.today().strftime("%Y-%m-%d")
-    new_id = 1
+    current_collections = g.conn.execute('''
+        SELECT * FROM Collection_of_User WHERE user_id = %s''',
+        (current_user.user_id, )).fetchall()
+    if current_collections:
+        new_id = max([collection['collection_id'] for collection in current_collections]) + 1
+    else:
+        new_id = 1
     g.conn.execute('''
         INSERT INTO Collection_of_User(user_id, collection_id, created_date) 
         VALUES (%s, %s, %s)''',
-        (current_user.user_id, new_id, created_date))
-    return redirect(url_for('restaurant', show = show))
+        (current_user.user_id, new_id, created_date))    
+    return redirect(url_for('restaurant', business_id = business_id, show = show))
 
 
 @app.route("/user_account", methods=['GET', 'POST'])
@@ -699,7 +707,6 @@ def search():
             FROM business_wide
             where state = %s
             ''',(state, )).fetchall()
-        print(bizs)
         conn.close()
         if bizs:
             return render_template('restaurants_main.html',  bizs = bizs)
