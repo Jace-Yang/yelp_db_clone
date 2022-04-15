@@ -6,7 +6,7 @@
     <form method="POST" action="">
         {{ form.hidden_tag() }}
         <fieldset class="form-group">
-            <legend class="border-bottom mb-4">{{ legend }}</legend>
+            <legend class="border-bottom mb-4">{{ legend }} for <a href = "{{url_for('restaurant', business_id=biz['business_id'])}}">{{biz['name']}}</a></legend>
             
             <div class="form-group">
                 {{ form.content.label(class="form-control-label") }}

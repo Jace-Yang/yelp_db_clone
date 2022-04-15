@@ -8,7 +8,7 @@ from flaskblog.forms import (RegistrationForm, LoginForm, UpdateAccountForm,
 
 from flaskblog.forms import ReviewForm, TipForm
 from flaskblog.models import User, Post, Yealper
-from flaskblog.database_utils import get_user, get_restaurant, get_detailed_reviews_with_user
+from flaskblog.database_utils import get_user
 from flask_login import login_user, current_user, logout_user, login_required
 from flask_mail import Message
 
@@ -24,34 +24,34 @@ def get_current_user():
 
 @app.before_request
 def before_request():
-  """
-  This function is run at the beginning of every web request 
-  (every time you enter an address in the web browser).
-  We use it to setup a database connection that can be used throughout the request
+    """
+    This function is run at the beginning of every web request 
+    (every time you enter an address in the web browser).
+    We use it to setup a database connection that can be used throughout the request
 
-  The variable g is globally accessible
-  """
-  try:
-    print("Try connecting...")
-    g.conn = engine.connect()
-    print("Connection is good!")
-    pass
-  except:
-    print("uh oh, problem connecting to database")
-    import traceback; traceback.print_exc()
-    g.conn = None
+    The variable g is globally accessible
+    """
+    try:
+        print("Try connecting...")
+        g.conn = engine.connect()
+        print("Connection is good!")
+        pass
+    except:
+        print("uh oh, problem connecting to database")
+        import traceback; traceback.print_exc()
+        g.conn = None
 
 
 @app.teardown_request
 def teardown_request(exception):
-  """
-  At the end of the web request, this makes sure to close the database connection.
-  If you don't the database could run out of memory!
-  """
-  try:
-    g.conn.close()
-  except Exception as e:
-    pass
+    """
+    At the end of the web request, this makes sure to close the database connection.
+    If you don't the database could run out of memory!
+    """
+    try:
+        g.conn.close()
+    except Exception as e:
+        pass
 
 @app.route("/oldhome")
 def home():
@@ -87,7 +87,6 @@ def register():
 
 @app.route("/login", methods=['GET', 'POST'])
 def login():
-    print(123)
     if current_user.is_authenticated:
         return redirect(url_for('home'))
     form = LoginForm()
@@ -152,7 +151,6 @@ def account():
 @app.route("/post/new", methods=['GET', 'POST'])
 @login_required
 def new_post():
-    print(10)
     form = PostForm()
     if form.validate_on_submit():
         post = Post(title=form.title.data, content=form.content.data, author=current_user)
@@ -217,7 +215,8 @@ def send_reset_email(user):
     msg = Message('Password Reset Request',
                   sender='noreply@demo.com',
                   recipients=[user.email])
-    msg.body = f'''To reset your password, visit the following link:
+                  
+    msg.body = f'''Hi {user.name}! This is the password reset instructions from Yealp platform. To reset your password, visit the following link:
 {url_for('reset_token', token=token, _external=True)}
 
 If you did not make this request then simply ignore this email and no changes will be made.
@@ -228,12 +227,15 @@ If you did not make this request then simply ignore this email and no changes wi
 @app.route("/reset_password", methods=['GET', 'POST'])
 def reset_request():   
     if current_user.is_authenticated:
-    #if session['current_uid']:
         return redirect(url_for('home'))
     form = RequestResetForm()
     if form.validate_on_submit():
-        user = User.query.filter_by(email=form.email.data).first()
-        send_reset_email(user)
+        user = engine.execute('''
+            SELECT * 
+            FROM Users
+            WHERE email = %s
+        ''', (form.email.data, )).fetchone()
+        send_reset_email(Yealper(user))
         flash('An email has been sent with instructions to reset your password.', 'info')
         return redirect(url_for('login'))
     return render_template('reset_request.html', title='Reset Password', form=form)
@@ -244,15 +246,20 @@ def reset_token(token):
     if current_user.is_authenticated:
     #if session['current_uid']:
         return redirect(url_for('home'))
-    user = User.verify_reset_token(token)
+    user = Yealper.verify_reset_token(token)
     if user is None:
         flash('That is an invalid or expired token', 'warning')
         return redirect(url_for('reset_request'))
     form = ResetPasswordForm()
     if form.validate_on_submit():
-        hashed_password = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
-        user.password = hashed_password
-        db.session.commit()
+        #hashed_password = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
+        #user.password = hashed_password
+        #db.session.commit()
+        g.conn.execute('''
+            UPDATE Users 
+            SET password = %s
+            WHERE user_id = %s
+            ''', (form.password.data, user.user_id))
         flash('Your password has been updated! You are now able to log in', 'success')
         return redirect(url_for('login'))
     return render_template('reset_token.html', title='Reset Password', form=form)
@@ -281,9 +288,21 @@ def restaurant(business_id, show = 'review'):
         SELECT * FROM business_wide WHERE business_id = %s
     ''', business_id).fetchone()
     # Load the review
+    reader_uid = current_user.user_id if current_user.is_authenticated else ' '
     reviews =  g.conn.execute('''
-        SELECT * FROM reviews_wide
-        WHERE business_id = %s''', (business_id, )).fetchall()
+        WITH current_user_upvote_status AS(
+            SELECT review_id, 
+                SUM(CASE WHEN upvote_type  = 'useful' THEN 1 ELSE 0 END) AS is_useful,
+                SUM(CASE WHEN upvote_type  = 'cool' THEN 1 ELSE 0 END) AS is_cool,
+                SUM(CASE WHEN upvote_type  = 'funny' THEN 1 ELSE 0 END) AS is_funny
+            FROM Users_upvote_Review 
+            WHERE user_id = %s
+            GROUP BY review_id
+        )
+        SELECT * 
+        FROM reviews_wide LEFT JOIN current_user_upvote_status USING(review_id)
+        WHERE business_id = %s
+    ''', (reader_uid, business_id)).fetchall()
     tips = g.conn.execute('''
         SELECT * FROM tips_wide
         WHERE business_id = %s''', (business_id, )).fetchall()
@@ -623,6 +642,7 @@ def user_collection(user_id, collection_id):
 @login_required
 def create_review(business_id):
     form = ReviewForm()
+    biz = g.conn.execute('SELECT * FROM Business WHERE business_id = %s', (business_id, )).fetchone()
     if form.validate_on_submit():
         max_review_id =  g.conn.execute('''
             SELECT MAX(review_id) as max_id FROM Review_of_Business''').fetchone()
@@ -642,15 +662,17 @@ def create_review(business_id):
             INSERT INTO Users_write_Review(user_id, review_id)
             VALUES (%s, %s)''',
             (current_user.user_id, review_id))
-        flash('Your post has been created!', 'success')
+        flash('Your review has been created!', 'success')
         return redirect(url_for('restaurant', business_id = business_id, show = 'review'))
-    return render_template('review/create_detail_review.html', form = form, title='New Review', legend='Submit new review')
+    return render_template('review/create_detail_review.html', biz = biz, form = form, title='New Review', legend='Submit new review')
+
 
 
 @app.route("/restaurant/<string:business_id>/tip/new", methods=['GET', 'POST'])
 @login_required
 def create_tip(business_id):
     form = TipForm()
+    biz = g.conn.execute('SELECT * FROM Business WHERE business_id = %s', (business_id, )).fetchone()
     if form.validate_on_submit():
         max_review_id =  g.conn.execute('''
             SELECT MAX(review_id) as max_id FROM Review_of_Business''').fetchone()
@@ -668,9 +690,9 @@ def create_tip(business_id):
             INSERT INTO Users_write_Review(user_id, review_id)
             VALUES (%s, %s)''',
             (current_user.user_id, review_id))
-        flash('Your post has been created!', 'success')
+        flash('Your tip has been created!', 'success')
         return redirect(url_for('restaurant', business_id = business_id, show = 'tip'))
-    return render_template('review/create_short_tip.html', form = form, title='New Review', legend='Submit new short tip')
+    return render_template('review/create_short_tip.html', form = form, biz = biz, title='New Tip', legend='Submit new short tip')
 
 
 @app.route("/restaurant/<string:business_id>/review/<string:review_id>/delete", methods=('POST',))
@@ -681,17 +703,38 @@ def delete_review(business_id, review_id):
         DELETE FROM Review_of_Business
         WHERE review_id = %s
         ''', (review_id, ))
+    flash('Your review has been deleted!', 'danger')
     return redirect(url_for('restaurant', business_id=business_id))
 
 @app.route("/restaurant/<string:business_id>/review/<string:review_id>/upvote/<string:upvote_type>", methods=('POST', 'GET'))
 @login_required
 def upvote_review(business_id, review_id, upvote_type):
-    print(business_id, review_id, upvote_type)
-    g.conn.execute(f'''
-        UPDATE Review_of_Business 
-        SET {upvote_type} = {upvote_type} + 1 
-        WHERE review_id = %s
-        ''', (review_id, ))
+    
+    def is_upvote():
+        return g.conn.execute('''
+            SELECT user_id, review_id, upvote_type 
+            FROM Users_upvote_Review 
+            WHERE review_id = %s AND upvote_type = %s AND user_id = %s
+            ''', (review_id, upvote_type, current_user.user_id)).fetchall()
+    if not is_upvote():
+        g.conn.execute('''
+            INSERT INTO Users_upvote_Review(user_id, review_id, upvote_type) VALUES(%s, %s, %s)
+        ''', (current_user.user_id, review_id, upvote_type))
+        g.conn.execute(f'''
+            UPDATE Review_of_Business 
+            SET {upvote_type} = {upvote_type} + 1 
+            WHERE review_id = %s
+            ''', (review_id, ))
+    else: 
+        g.conn.execute('''
+            DELETE FROM Users_upvote_Review
+            WHERE user_id = %s AND review_id = %s AND upvote_type = %s
+        ''', (current_user.user_id, review_id, upvote_type))
+        g.conn.execute(f'''
+            UPDATE Review_of_Business 
+            SET {upvote_type} = {upvote_type} - 1 
+            WHERE review_id = %s
+            ''', (review_id, ))
     return redirect(url_for('restaurant', business_id=business_id))
 
 @app.route("/",methods=['GET', 'POST'])

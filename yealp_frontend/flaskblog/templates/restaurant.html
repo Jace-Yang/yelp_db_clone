@@ -156,11 +156,25 @@
             <article class="media content-section">
               <img class="rounded-circle article-img" src="{{ url_for('static', filename='profile_pics/default.jpg') }}">
               <div class="media-body">
-                <div class="article-metadata">
-                  <a class="mr-1" href="{{ url_for('user_main', user_id=review['user_id']) }}">{{ review['user_name'] }}</a>
-                  <span class="badge badge-primary">Stars: {{review['stars']}}</span>
+                <div class="review-metadata">
 
-                  <small class="text-muted">{{ review['review_date'].strftime('%Y-%m-%d') }}</small>
+                  <div class="row">
+
+                    <div class="col-10">
+                      <a class="mr-1" href="{{ url_for('user_main', user_id=review['user_id']) }}">{{ review['user_name'] }}</a>
+                      <span class="badge  badge-light mb-1">Words: {{review['detailed_review']|length}}</span>
+                      <small class="text-muted">{{ review['review_date'].strftime('%Y-%m-%d') }}</small>
+                    </div>
+                    
+                  
+                    <div class="col-2">
+                      <img class="img" width = '100%' src="{{ url_for('static', filename='stars/' + review['stars']|string + '.png') }}">
+                    </div>              
+                  </div>
+
+                  
+                  
+                  
                 </div>  
                 <p class="article-content">{{ review['detailed_review'] }}</p>
                 
@@ -170,15 +184,17 @@
                         onclick="return confirm('Are you sure you want to delete your review?')">
                   </form>  
                 {% else %}
+                
                   <div style="display: flex;">
                     <form action="{{ url_for('upvote_review', review_id = review['review_id'], business_id=restaurant['business_id'], upvote_type = 'useful') }}" method="POST">
-                      <input class="btn btn-primary btn-sm m-1" type="submit" value="Userful: {{review['useful']}}" >
+                      <input class="btn btn-primary btn-sm m-1 {% if not review['is_useful'] %}disabled{% endif %}" type="submit" value="Useful: {{review['useful']}}" >
                     </form>
                     <form action="{{ url_for('upvote_review', review_id = review['review_id'], business_id=restaurant['business_id'], upvote_type = 'funny') }}" method="POST">
-                      <input class="btn btn-info btn-sm m-1" type="submit" value="Funny: {{review['funny']}}" >
+                      <input class="btn btn-info btn-sm m-1 {% if not review['is_funny'] %}disabled{% endif %}" type="submit" value="Funny: {{review['funny']}}" >
                     </form>
+                    
                     <form action="{{ url_for('upvote_review', review_id = review['review_id'], business_id=restaurant['business_id'], upvote_type = 'cool') }}" method="POST">
-                      <input class="btn btn-success btn-sm m-1" type="submit" value="Cool: {{review['cool']}}" >
+                      <input class="btn btn-success btn-sm m-1 {% if not review['is_cool'] %}disabled{% endif %}" type="submit" value="Cool: {{review['cool']}}" >
                     </form>
                   </div>
                 {% endif %}
