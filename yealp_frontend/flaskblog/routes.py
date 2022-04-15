@@ -32,8 +32,10 @@ def before_request():
   The variable g is globally accessible
   """
   try:
+    print("Try connecting...")
     g.conn = engine.connect()
-    session['current_uid'] = ''
+    print("Connection is good!")
+    pass
   except:
     print("uh oh, problem connecting to database")
     import traceback; traceback.print_exc()
@@ -47,12 +49,9 @@ def teardown_request(exception):
   If you don't the database could run out of memory!
   """
   try:
-    session.pop('current_uid', None)
     g.conn.close()
   except Exception as e:
     pass
-
-
 
 @app.route("/oldhome")
 def home():
@@ -88,12 +87,14 @@ def register():
 
 @app.route("/login", methods=['GET', 'POST'])
 def login():
+    print(123)
     if current_user.is_authenticated:
         return redirect(url_for('home'))
     form = LoginForm()
     if form.validate_on_submit():
         #user = User.query.filter_by(email=form.email.data).first()
-        user = g.conn.execute('''
+        print('OK')
+        user = engine.execute('''
             SELECT * 
             FROM Users
             WHERE email = %s
@@ -260,7 +261,7 @@ def reset_token(token):
 @app.route('/restaurants') 
 def restaurants():
     bizs = g.conn.execute('''
-    SELECT * FROM business_wide LIMIT 50
+        SELECT * FROM business_wide LIMIT 50
     ''').fetchall()
     return render_template('restaurants_main.html', bizs=bizs)  
 
@@ -657,11 +658,13 @@ def upvote_review(business_id, review_id, upvote_type):
 @app.route("/",methods=['GET', 'POST'])
 @app.route('/home',methods=['GET', 'POST'])
 def search():
+    
     form = SearchForm()
     if form.validate_on_submit():
         state = form.state.data
         print(state)
-        bizs = g.conn.execute('''
+        conn = engine.connect()
+        bizs = conn.execute('''
                 SELECT *
                 FROM business_wide
                 JOIN (SELECT business_id, array_agg(name) as category_names
@@ -671,7 +674,7 @@ def search():
                 using(business_id)
                 where state = %s
             ''',(state, )).fetchall()
-        print(bizs)
+        conn.close()
         
         if bizs:
             return render_template('restaurants_main.html',  bizs = bizs)
