@@ -28,9 +28,33 @@ h1, h2, h3, h4, h5, h6 {
   background: #ffffff;
   padding: 10px 20px;
   border: 1px solid #dddddd;
-  border-radius: 3px;
+  border-radius: 5px;
   margin-bottom: 20px;
 }
+
+.carousel-indicators {
+  bottom:-2px;
+}
+
+/* adjust the carousel width https://stackoverflow.com/questions/19481334/bootstrap-carousel-width-and-height*/
+.tales {
+  width: 100%;
+}
+.carousel-inner{
+  width:100%;
+  min-width: 160px !important;
+  max-width: 160px !important;
+  
+}
+
+.content-section-2 {
+  background: #ffffff;
+  padding: 10px 20px;
+  border: 1px solid #dddddd;
+  border-radius: 5px;
+  margin-bottom: 20px;
+}
+
 
 .article-title {
   color: #444444;
@@ -50,6 +74,14 @@ a.article-title:hover {
   width: 65px;
   margin-right: 16px;
 }
+
+
+.d-block {
+  border-radius: 20px;
+  height: 150px;
+  width: 60px;
+}
+
 
 .article-metadata {
   padding-bottom: 1px;
