@@ -1,8 +1,8 @@
 
 
-Install pip if needed
+Create a virtual environment
 
-        sudo apt-get install python-pip
+        source venvyb/bin/activate
 
 Install libraries
 

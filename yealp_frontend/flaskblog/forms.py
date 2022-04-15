@@ -76,8 +76,10 @@ class ReviewForm(FlaskForm):
     content = TextAreaField('Content', validators=[DataRequired(), Length(min=30)])
     submit = SubmitField('Post')
 
+class TipForm(FlaskForm):
+    content = TextAreaField('Content', validators=[DataRequired()])
+    submit = SubmitField('Post')
 
-    
 class SearchForm(FlaskForm):
     from sqlalchemy import create_engine
     SUBMIT = True

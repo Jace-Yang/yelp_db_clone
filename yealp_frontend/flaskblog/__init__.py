@@ -28,7 +28,7 @@ app.config['MAIL_USERNAME'] = os.environ.get('EMAIL_USER')
 app.config['MAIL_PASSWORD'] = os.environ.get('EMAIL_PASS')
 mail = Mail(app)
 
-TESTING = False
+TESTING = True
 if TESTING:
     DB_USER = os.environ.get('DB_USER_1')
     DB_PASSWORD = os.environ.get('DB_PASSWORD_1')
@@ -38,6 +38,7 @@ else:
 DB_SERVER = "w4111.cisxo09blonu.us-east-1.rds.amazonaws.com"
 #DATABASEURI = "postgresql://"+DB_USER+":"+DB_PASSWORD+"@"+DB_SERVER+"/w4111"
 DATABASEURI = "postgresql://"+DB_USER+":"+DB_PASSWORD+"@"+DB_SERVER+"/proj1part2"
+
 engine = create_engine(DATABASEURI)
 
 from flaskblog import routes

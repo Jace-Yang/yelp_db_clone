@@ -6,7 +6,7 @@ from flaskblog import app, db, bcrypt, mail, engine
 from flaskblog.forms import (RegistrationForm, LoginForm, UpdateAccountForm,
                              PostForm, RequestResetForm, ResetPasswordForm,SearchForm)
 
-from flaskblog.forms import ReviewForm
+from flaskblog.forms import ReviewForm, TipForm
 from flaskblog.models import User, Post, Yealper
 from flaskblog.database_utils import get_user, get_restaurant, get_detailed_reviews_with_user
 from flask_login import login_user, current_user, logout_user, login_required
@@ -33,7 +33,6 @@ def before_request():
   """
   try:
     g.conn = engine.connect()
-    session['current_uid'] = ''
   except:
     print("uh oh, problem connecting to database")
     import traceback; traceback.print_exc()
@@ -47,7 +46,6 @@ def teardown_request(exception):
   If you don't the database could run out of memory!
   """
   try:
-    session.pop('current_uid', None)
     g.conn.close()
   except Exception as e:
     pass
@@ -265,7 +263,7 @@ def restaurants():
     return render_template('restaurants_main.html', bizs=bizs)  
 
 @app.route('/restaurant/<string:business_id>', methods=['GET', 'POST'])
-def restaurant(business_id):
+def restaurant(business_id, show = 'review'):
     def CurrentUserIsFan():
         if not current_user.is_authenticated:
             return False
@@ -278,11 +276,13 @@ def restaurant(business_id):
         
     restaurant = get_restaurant(business_id)
     # Load the review
-    reviews = get_detailed_reviews_with_user(business_id)
+    reviews =  g.conn.execute('''
+        SELECT * FROM reviews_wide
+        WHERE business_id = %s''', (business_id, )).fetchall()
     tips = g.conn.execute('''
         SELECT * FROM tips_wide
         WHERE business_id = %s''', (business_id, )).fetchall()
-    print(tips)
+
     favorite = CurrentUserIsFan()
     collections = None
 
@@ -341,7 +341,20 @@ def restaurant(business_id):
                 ORDER BY collection_id''', (current_user.user_id, business_id)).fetchall()
             #return render_template("restaurant.html", restaurant=restaurant, reviews=reviews, favorite=favorite, collections=collections)
 
-    return render_template('restaurant.html', restaurant=restaurant, reviews=reviews, tips = tips, favorite=favorite, collections=collections)
+    return render_template('restaurant.html', restaurant=restaurant, reviews=reviews, tips = tips, favorite=favorite, collections=collections, show = show)
+
+@app.route('/restaurant/<string:business_id>/new_collection', methods=['GET', 'POST'])
+@login_required
+def create_collection_in_restaurant(business_id, show):
+
+    created_date = date.today().strftime("%Y-%m-%d")
+    new_id = 1
+    g.conn.execute('''
+        INSERT INTO Collection_of_User(user_id, collection_id, created_date) 
+        VALUES (%s, %s, %s)''',
+        (current_user.user_id, new_id, created_date))
+    return redirect(url_for('restaurant', show = show))
+
 
 @app.route("/user_account", methods=['GET', 'POST'])
 @login_required
@@ -619,9 +632,34 @@ def create_review(business_id):
             VALUES (%s, %s)''',
             (current_user.user_id, review_id))
         flash('Your post has been created!', 'success')
-        #render_template('/restaurant/<string:business_id>/review/new', form = form, title='New Review', legend='Create new review')
-        return redirect(url_for('restaurant', business_id = business_id))
-    return render_template('review/create_detail_review.html', form = form, title='New Review', legend='Create new review')
+        return redirect(url_for('restaurant', business_id = business_id, show = 'review'))
+    return render_template('review/create_detail_review.html', form = form, title='New Review', legend='Submit new review')
+
+
+@app.route("/restaurant/<string:business_id>/tip/new", methods=['GET', 'POST'])
+@login_required
+def create_tip(business_id):
+    form = TipForm()
+    if form.validate_on_submit():
+        max_review_id =  g.conn.execute('''
+            SELECT MAX(review_id) as max_id FROM Review_of_Business''').fetchone()
+        review_id = max_review_id['max_id'] + 1
+        review_date = date.today().strftime("%Y-%m-%d")
+        short_tip = form.content.data
+        likes = 0
+        # Input the reivew into the business
+        g.conn.execute('''
+            INSERT INTO Review_of_Business(review_id, review_date, business_id, short_tip, likes)
+            VALUES (%s, %s, %s, %s, %s)''',
+            (review_id, review_date, business_id, short_tip, likes))
+        # Log the users that creates it
+        g.conn.execute('''
+            INSERT INTO Users_write_Review(user_id, review_id)
+            VALUES (%s, %s)''',
+            (current_user.user_id, review_id))
+        flash('Your post has been created!', 'success')
+        return redirect(url_for('restaurant', business_id = business_id, show = 'tip'))
+    return render_template('review/create_short_tip.html', form = form, title='New Review', legend='Submit new short tip')
 
 
 @app.route("/restaurant/<string:business_id>/review/<string:review_id>/delete", methods=('POST',))
@@ -634,7 +672,7 @@ def delete_review(business_id, review_id):
         ''', (review_id, ))
     return redirect(url_for('restaurant', business_id=business_id))
 
-@app.route("/restaurant/<string:business_id>/review/<string:review_id>/upvote/<string:upvote_type>", methods=('POST',))
+@app.route("/restaurant/<string:business_id>/review/<string:review_id>/upvote/<string:upvote_type>", methods=('POST', 'GET'))
 @login_required
 def upvote_review(business_id, review_id, upvote_type):
     print(business_id, review_id, upvote_type)
@@ -648,6 +686,7 @@ def upvote_review(business_id, review_id, upvote_type):
 @app.route("/",methods=['GET', 'POST'])
 @app.route('/home',methods=['GET', 'POST'])
 def search():
+    print
     form = SearchForm()
     if form.validate_on_submit():
         state = form.state.data
