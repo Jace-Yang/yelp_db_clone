@@ -2,6 +2,7 @@ from datetime import datetime
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
 from flaskblog import db, login_manager, app, engine
 from flask_login import UserMixin
+from flask import g
 
 
 @login_manager.user_loader
@@ -21,6 +22,7 @@ class Yealper(object):
     def __init__(self, user):
         self.user_id = user['user_id']
         self.name = user['name']
+        self.email = user['email']
 
     def get_id(self):
         return self.user_id
@@ -33,6 +35,19 @@ class Yealper(object):
 
     def is_authenticated(self):
         return True
+
+    def get_reset_token(self, expires_sec=1800):
+        s = Serializer(app.config['SECRET_KEY'], expires_sec)
+        return s.dumps({'user_id': self.user_id}).decode('utf-8')
+
+    @staticmethod
+    def verify_reset_token(token):
+        s = Serializer(app.config['SECRET_KEY'])
+        try:
+            user_id = s.loads(token)['user_id']
+        except:
+            return None
+        return g.conn.execute('SELECT * FROM USERS WHERE user_id = %s', (user_id, )).fetchone()
 
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)

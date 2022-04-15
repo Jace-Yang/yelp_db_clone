@@ -89,6 +89,13 @@ a.article-title:hover {
   border-bottom: 1px solid #e3e3e3
 }
 
+.review-metadata {
+  padding-top: 5px;
+  padding-bottom: 1px;
+  margin-bottom: 5px;
+  border-bottom: 1px solid #e3e3e3
+}
+
 .article-metadata a:hover {
   color: #333;
   text-decoration: none;

@@ -1,14 +1,16 @@
 {% extends "layout.html" %}
 {% block content %}
 
-
-
-
 <div class="content-section">
     <form method="POST" action="">
         {{ form.hidden_tag() }}
         <fieldset class="form-group">
-            <legend class="border-bottom mb-4">{{ legend }}</legend>
+            <legend class="border-bottom mb-4">{{ legend }} for <a href = "{{url_for('restaurant', business_id=biz['business_id'])}}">{{biz['name']}}</a></legend>
+            
+            <p>You are giving a star rating that other users value on, so please fill in at least 30 words!
+                <br>You can also only  <a href = "{{url_for('create_tip', business_id=biz['business_id'])}}">leave a short tip</a> instead.
+            </p>
+            
             <div class="form-group">
                 {{ form.star.label(class="form-control-label") }}
                 {% if form.star.errors %}

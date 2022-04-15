@@ -9,7 +9,7 @@ from flaskblog import app, db,engine
 from flask import render_template, url_for, flash, redirect, request, abort, g, session
 
 class RegistrationForm(FlaskForm):
-    username = StringField('Username',
+    username = StringField('Your name',
                            validators=[DataRequired(), Length(min=2, max=20)])
     email = StringField('Email',
                         validators=[DataRequired(), Email()])
@@ -18,13 +18,8 @@ class RegistrationForm(FlaskForm):
                                      validators=[DataRequired(), EqualTo('password')])
     submit = SubmitField('Sign Up')
 
-    def validate_username(self, username):
-        user = User.query.filter_by(username=username.data).first()
-        if user:
-            raise ValidationError('That username is taken. Please choose a different one.')
-
     def validate_email(self, email):
-        user = User.query.filter_by(email=email.data).first()
+        user = g.conn.execute('SELECT * FROM USERS WHERE email = %s', (email.data, )).fetchone()
         if user:
             raise ValidationError('That email is taken. Please choose a different one.')
 
@@ -121,7 +116,7 @@ class RequestResetForm(FlaskForm):
     submit = SubmitField('Request Password Reset')
 
     def validate_email(self, email):
-        user = User.query.filter_by(email=email.data).first()
+        user = g.conn.execute('SELECT * FROM USERS WHERE email = %s', (email.data, )).fetchone()
         if user is None:
             raise ValidationError('There is no account with that email. You must register first.')
 
