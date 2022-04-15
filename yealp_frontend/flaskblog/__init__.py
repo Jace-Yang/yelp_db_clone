@@ -39,7 +39,7 @@ DB_SERVER = os.environ.get('DB_SERVER')
 #DATABASEURI = "postgresql://"+DB_USER+":"+DB_PASSWORD+"@"+DB_SERVER+"/w4111"
 #DATABASEURI = "postgresql://"+DB_USER+":"+DB_PASSWORD+"@"+DB_SERVER+"/proj1part2"
 #postgresql://jy3174:JaceYJH@w4111.cisxo09blonu.us-east-1.rds.amazonaws.com/proj1part2
-print(DATABASEURI)
+#print(DATABASEURI)
 
 engine = create_engine('postgresql://jy3174:JaceYJH@w4111.cisxo09blonu.us-east-1.rds.amazonaws.com/proj1part2')
 
