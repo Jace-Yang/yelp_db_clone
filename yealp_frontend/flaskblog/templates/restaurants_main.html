@@ -42,7 +42,8 @@
 
             <div class="container-fluid">
                 <div class="row">
-                    <div class="col-4">
+
+                    <div class="col-7">
                         <h5><a href="{{url_for('restaurant', business_id=biz['business_id'])}}">
                             {{ biz['name'] }}
                         </a> </h5>
@@ -58,13 +59,24 @@
                 </div>
                 <div class="col">
                     {% for category in biz['category_names'] %}
-                        <p>{{ category }}<p/>
+                        <span class="badge badge-secondary">{{category}}</span>
                     {% endfor %} 
 
                     <p>City: {{ biz['city'] }}</p>
                     <p>Address: {{biz['address'] }}</p>
-                    <p>IsTakeout: {{biz['is_takeout'] }}</p>
-                    <p>IsOpen: {{biz['is_open'] }}</p>
+
+                    {% if biz['is_open']|string == 'True' %}
+                        <b style="color:#479f71;">Open</b>
+                    {% else %}
+                        <b style="color:#cd2e20;">Closed</b>
+                    {% endif %}
+
+                    {% if biz['is_takeout']|string == 'True' %}
+                        &nbsp Take out<img width = "5%" src="{{ url_for('static', filename='icons/is_biz_attributes.png') }}" >
+                    {% endif %}
+                    
+                    
+                    
                 </div>
                 
             </div>

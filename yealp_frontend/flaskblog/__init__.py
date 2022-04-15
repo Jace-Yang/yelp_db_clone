@@ -39,6 +39,6 @@ DB_SERVER = os.environ.get('DB_SERVER')
 DATABASEURI = "postgresql://"+DB_USER+":"+DB_PASSWORD+"@"+DB_SERVER+"/proj1part2"
 print(DATABASEURI)
 
-engine = create_engine("postgresql://jy3174:JaceYJH@w4111-4-14.cisxo09blonu.us-east-1.rds.amazonaws.com/proj1part2")
+engine = create_engine(DATABASEURI)
 
 from flaskblog import routes

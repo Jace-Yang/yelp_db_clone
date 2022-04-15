@@ -689,7 +689,6 @@ def upvote_review(business_id, review_id, upvote_type):
 @app.route("/",methods=['GET', 'POST'])
 @app.route('/home',methods=['GET', 'POST'])
 def search():
-    
     form = SearchForm()
     if form.validate_on_submit():
         state = form.state.data
@@ -701,7 +700,6 @@ def search():
             where state = %s
             ''',(state, )).fetchall()
         conn.close()
-        
         if bizs:
             return render_template('restaurants_main.html',  bizs = bizs)
         else:
