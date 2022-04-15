@@ -699,6 +699,7 @@ def search():
             FROM business_wide
             where state = %s
             ''',(state, )).fetchall()
+        print(bizs)
         conn.close()
         if bizs:
             return render_template('restaurants_main.html',  bizs = bizs)
