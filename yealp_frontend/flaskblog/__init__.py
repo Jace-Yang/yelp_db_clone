@@ -27,7 +27,7 @@ app.config['MAIL_USERNAME'] = os.environ.get('EMAIL_USER')
 app.config['MAIL_PASSWORD'] = os.environ.get('EMAIL_PASS')
 mail = Mail(app)
 
-TESTING = False
+TESTING = True
 if TESTING:
     DB_USER = os.environ.get('DB_USER_1')
     DB_PASSWORD = os.environ.get('DB_PASSWORD_1')
