@@ -18,20 +18,89 @@
   {% endif %}
 
   <h2>{% block title %} {{ restaurant['name'] }} {% endblock %} </h2>
-  <span class="badge badge-primary">{{ restaurant['city'] }}</span>
-  <p>{{ restaurant['address'] }}</p>
+
+  <article class="media content-section-2">
+    <div id="carouselExampleIndicators" class="carousel slide" data-ride="carousel">
+        <ol class="carousel-indicators">
+            {% for photo in restaurant['photo_ids'] %}
+                <li data-target="#carouselExampleIndicators" data-slide-to={{loop.index}} class="{% if loop.index == 1 %}active{% endif %}"></li>
+            {% endfor %}
+        </ol>
+        <div class="carousel-inner">
+            {% for photo in restaurant['photo_ids'] %}
+                <div class="carousel-item {% if loop.index == 1 %}active{% endif %}">
+                    <img class="d-block w-100"  src="{{ url_for('static', filename='business_photos/' + photo|string + '.jpg') }}" alt="{{restaurant['business_id']}}">
+                </div>
+            {% endfor %}
+        </div>
+        <a class="carousel-control-prev" href="#carouselExampleIndicators" role="button" data-slide="prev">
+            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+            <span class="sr-only">Previous</span>
+        </a>
+        <a class="carousel-control-next" href="#carouselExampleIndicators" role="button" data-slide="next">
+            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+            <span class="sr-only">Next</span>
+        </a>
+    </div>
+
+    <div class="container-fluid">
+      <div class="row">
+
+          <div class="col-7">
+              <h5><a href="{{url_for('restaurant', business_id=restaurant['business_id'])}}">
+                  {{ restaurant['name'] }}
+              </a> </h5>
+          </div>
+          
+          <div class="col">
+              {{restaurant['average_stars']}}
+          </div>
+          <div class="col-md-2 px-0">
+              <img class="img-fluid" alt="Responsive image" src="{{ url_for('static', filename='stars/' + restaurant['rounded_average_stars']|string + '.png') }}">
+          </div>
+
+        </div>
+        <div class="col">
+            {% for category in restaurant['category_names'] %}
+                <span class="badge badge-secondary">{{category}}</span>
+            {% endfor %} 
+
+            <p>City: {{ restaurant['city'] }}</p>
+            <p>Address: {{restaurant['address'] }}</p>
+
+            {% if restaurant['is_open']|string == 'True' %}
+                <b style="color:#479f71;">Open</b>
+            {% else %}
+                <b style="color:#cd2e20;">Closed</b>
+            {% endif %}
+
+            {% if restaurant['is_takeout']|string == 'True' %}
+                &nbsp Take out<img width = "5%" src="{{ url_for('static', filename='icons/is_biz_attributes.png') }}" >
+            {% endif %}
+        </div>      
+    </div>
+  </article>
+
   
-  <HR style="border:4 double #dbdbdb" width="100%" color=#983636 SIZE=1>
+  
+  
+  <HR style="border:4 double #dbdbdb" width="100%" color=#dbdbdb SIZE=1>
 
   {% if collections %}
     <form id="collection" action="" method="post">
-
+      
       <div class="form-group row">
-        <div class="col-sm-4">You have collected it in:</div>
-        <div class="col">
-          <button type="submit" class="btn btn-primary btn-sm float-right">Update collections</button>
-        </div>
+        <div class="col-9">
+          <p>You have collected it in following collections, you can 
+            <a href = "{{ url_for('create_collection_in_restaurant', business_id = restaurant['business_id'], show = show)}}">
+              create a new one.
+            </a>
+          </p>
+      </div>
 
+      <div class="col">
+        <button type="submit" class="btn btn-primary btn-sm float-right">Update collections</button>
+      </div>
         <div class="container">
           {% for collection in collections %}
             {% if collection['biz_in'] %}
@@ -51,11 +120,11 @@
       </div>
     </form>
   {% else %}
-    You don't have any collection yet, please <a href = "#">create</a> 1
+    You don't have any collection yet, please <a href = "{{ url_for('create_collection_in_restaurant', business_id = restaurant['business_id'], show = show)}}">create</a> 1
   {% endif %}
     
     
-  <HR style="border:4 double #dbdbdb" width="100%" color=#983636 SIZE=1>
+  <HR style="border:4 double #dbdbdb" width="100%" color=#dbdbdb SIZE=1>
 
       <ul class="nav nav-tabs" role="tablist">
         {% if show == "review" %}
@@ -77,9 +146,8 @@
     
     <!-- Tab panes -->
     <div class="tab-content">
-
-        <div class="tab-pane" id="Reviews" role="tabpanel">
-
+        
+        <div class="tab-pane {% if show == 'review' %}active{% endif %}" id="Reviews" role="tabpanel">
           <p align="middle">
             <a class="btn btn-primary btn-sm mt-3" href="{{ url_for('create_review', business_id=restaurant['business_id']) }}">Submit new detailed review</a>
           </p>
@@ -118,7 +186,7 @@
             </article>
           {% endfor %}
         </div>
-        <div class="tab-pane active" id="Tips" role="tabpanel">
+        <div class="tab-pane {% if show == 'tip' %}active{% endif %}" id="Tips" role="tabpanel">
 
           <p align="middle">
             <a class="btn btn-primary btn-sm mt-3" href="{{ url_for('create_tip', business_id=restaurant['business_id']) }}">Submit new short tips</a>
