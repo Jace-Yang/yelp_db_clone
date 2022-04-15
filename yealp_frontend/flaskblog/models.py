@@ -8,9 +8,9 @@ from flask_login import UserMixin
 def load_user(user_id):
     conn = engine.connect()
     user = conn.execute('''
-            SELECT *
-            FROM Users
-            WHERE user_id = %s''', (user_id, )).fetchone()
+        SELECT *
+        FROM Users
+        WHERE user_id = %s''', (user_id, )).fetchone()
     if user:
         return Yealper(user)
     else:

@@ -8,9 +8,7 @@ from flask_mail import Mail
 from sqlalchemy import create_engine
 from sqlalchemy.pool import NullPool
 
-
 from dotenv import load_dotenv
-
 load_dotenv()
 
 app = Flask(__name__)
@@ -28,17 +26,19 @@ app.config['MAIL_USERNAME'] = os.environ.get('EMAIL_USER')
 app.config['MAIL_PASSWORD'] = os.environ.get('EMAIL_PASS')
 mail = Mail(app)
 
-TESTING = False
+TESTING = True
 if TESTING:
     DB_USER = os.environ.get('DB_USER_1')
     DB_PASSWORD = os.environ.get('DB_PASSWORD_1')
 else:
     DB_USER = os.environ.get('DB_USER_2')
     DB_PASSWORD = os.environ.get('DB_PASSWORD_2')
-DB_SERVER = "w4111.cisxo09blonu.us-east-1.rds.amazonaws.com"
+DB_SERVER = os.environ.get('DB_SERVER')
+#DB_SERVER = "w4111project1part2db.cisxo09blonu.us-east-1.rds.amazonaws.com"
 #DATABASEURI = "postgresql://"+DB_USER+":"+DB_PASSWORD+"@"+DB_SERVER+"/w4111"
 DATABASEURI = "postgresql://"+DB_USER+":"+DB_PASSWORD+"@"+DB_SERVER+"/proj1part2"
+print(DATABASEURI)
 
-engine = create_engine(DATABASEURI)
+engine = create_engine("postgresql://jy3174:JaceYJH@w4111-4-14.cisxo09blonu.us-east-1.rds.amazonaws.com/proj1part2")
 
 from flaskblog import routes
