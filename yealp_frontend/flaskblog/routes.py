@@ -2,12 +2,11 @@ import os
 import secrets
 from PIL import Image
 from flask import render_template, url_for, flash, redirect, request, abort, g, session
-from flaskblog import app, db, bcrypt, mail, engine
+from flaskblog import app, mail, engine
 from flaskblog.forms import (RegistrationForm, LoginForm, UpdateAccountForm,
-                             PostForm, RequestResetForm, ResetPasswordForm,SearchForm)
-
-from flaskblog.forms import ReviewForm, TipForm
-from flaskblog.models import User, Post, Yealper
+                             RequestResetForm, ResetPasswordForm,SearchForm,
+                             ReviewForm, TipForm, AddBusinessPictureForm)
+from flaskblog.models import Yealper
 from flaskblog.database_utils import get_user
 from flask_login import login_user, current_user, logout_user, login_required
 from flask_mail import Message
@@ -52,12 +51,6 @@ def teardown_request(exception):
         g.conn.close()
     except Exception as e:
         pass
-
-@app.route("/oldhome")
-def home():
-    page = request.args.get('page', 1, type=int)
-    posts = Post.query.order_by(Post.date_posted.desc()).paginate(page=page, per_page=5)
-    return render_template('home.html', posts=posts)
 
 @app.route("/register", methods=['GET', 'POST'])
 def register():
@@ -106,7 +99,7 @@ def login():
             return redirect(next_page) if next_page else redirect(url_for('search'))
         else:
             flash('Login Unsuccessful. Please check email and password', 'danger')
-    return render_template('login.html', title='Login', form=form)
+    return render_template('user/login.html', title='Login', form=form)
 
 
 @app.route("/logout")
@@ -115,11 +108,11 @@ def logout():
     return redirect(url_for('search'))
 
 
-def save_picture(form_picture):
+def save_picture(form_picture, path = 'static/profile_pics'):
     random_hex = secrets.token_hex(8)
     _, f_ext = os.path.splitext(form_picture.filename)
     picture_fn = random_hex + f_ext
-    picture_path = os.path.join(app.root_path, 'static/profile_pics', picture_fn)
+    picture_path = os.path.join(app.root_path, path, picture_fn)
 
     output_size = (125, 125)
     i = Image.open(form_picture)
@@ -128,38 +121,29 @@ def save_picture(form_picture):
     return picture_fn
 
 
+
 @app.route("/account", methods=['GET', 'POST'])
 @login_required
 def account():
     form = UpdateAccountForm()
     if form.validate_on_submit():
-        if form.picture.data:
-            picture_file = save_picture(form.picture.data)
-            current_user.image_file = picture_file
-        current_user.username = form.username.data
-        current_user.email = form.email.data
-        db.session.commit()
+        picture_file = save_picture(form.picture.data) if form.picture.data else current_user.account_img_file
+        
+        g.conn.execute('''
+            UPDATE Users 
+            SET name = %s, email = %s, account_img_file = %s
+            WHERE user_id = %s
+            ''', (form.username.data, form.email.data, picture_file, current_user.user_id))
+        print(123123)
         flash('Your account has been updated!', 'success')
         return redirect(url_for('account'))
     elif request.method == 'GET':
-        form.username.data = current_user.username
+        form.username.data = current_user.name
         form.email.data = current_user.email
-    image_file = url_for('static', filename='profile_pics/' + current_user.image_file)
-    return render_template('account.html', title='Account',
+    image_file = url_for('static', filename='profile_pics/' + current_user.account_img_file)
+    return render_template('user/account.html', title='Account',
                            image_file=image_file, form=form)
 
-@app.route("/post/new", methods=['GET', 'POST'])
-@login_required
-def new_post():
-    form = PostForm()
-    if form.validate_on_submit():
-        post = Post(title=form.title.data, content=form.content.data, author=current_user)
-        db.session.add(post)
-        db.session.commit()
-        flash('Your post has been created!', 'success')
-        return redirect(url_for('home'))
-    return render_template('create_post.html', title='New Post',
-                           form=form, legend='New Post')
 
 @app.route("/post/<int:post_id>")
 def post(post_id):
@@ -167,47 +151,24 @@ def post(post_id):
     return render_template('post.html', title=post.title, post=post)
 
 
-@app.route("/post/<int:post_id>/update", methods=['GET', 'POST'])
-@login_required
-def update_post(post_id):
-    post = Post.query.get_or_404(post_id)
-    if post.author != current_user:
-        abort(403)
-    form = PostForm()
-    if form.validate_on_submit():
-        post.title = form.title.data
-        post.content = form.content.data
-        db.session.commit()
-        flash('Your post has been updated!', 'success')
-        return redirect(url_for('post', post_id=post.id))
-    elif request.method == 'GET':
-        form.title.data = post.title
-        form.content.data = post.content
-    return render_template('create_post.html', title='Update Post',
-                           form=form, legend='Update Post')
-
-
-@app.route("/post/<int:post_id>/delete", methods=['POST'])
-@login_required
-def delete_post(post_id):
-    post = Post.query.get_or_404(post_id)
-    if post.author != current_user:
-        abort(403)
-    db.session.delete(post)
-    db.session.commit()
-    flash('Your post has been deleted!', 'success')
-    return redirect(url_for('home'))
-
-
-
-@app.route("/bloguser/<string:username>")
-def user_posts(username):
-    page = request.args.get('page', 1, type=int)
-    user = User.query.filter_by(username=username).first_or_404()
-    posts = Post.query.filter_by(author=user)\
-        .order_by(Post.date_posted.desc())\
-        .paginate(page=page, per_page=5)
-    return render_template('user_posts.html', posts=posts, user=user)
+# @app.route("/post/<int:post_id>/update", methods=['GET', 'POST'])
+# @login_required
+# def update_post(post_id):
+#     post = Post.query.get_or_404(post_id)
+#     if post.author != current_user:
+#         abort(403)
+#     form = PostForm()
+#     if form.validate_on_submit():
+#         post.title = form.title.data
+#         post.content = form.content.data
+#         db.session.commit()
+#         flash('Your post has been updated!', 'success')
+#         return redirect(url_for('post', post_id=post.id))
+#     elif request.method == 'GET':
+#         form.title.data = post.title
+#         form.content.data = post.content
+#     return render_template('create_post.html', title='Update Post',
+#                            form=form, legend='Update Post')
 
 
 def send_reset_email(user):
@@ -244,7 +205,6 @@ def reset_request():
 @app.route("/reset_password/<token>", methods=['GET', 'POST'])
 def reset_token(token):
     if current_user.is_authenticated:
-    #if session['current_uid']:
         return redirect(url_for('home'))
     user = Yealper.verify_reset_token(token)
     if user is None:
@@ -264,13 +224,71 @@ def reset_token(token):
         return redirect(url_for('login'))
     return render_template('reset_token.html', title='Reset Password', form=form)
 
+@app.route("/",methods=['GET', 'POST'])
+@app.route('/home',methods=['GET', 'POST'])
+def search():
+    form = SearchForm()
+    print(form)
+    if form.validate_on_submit():
+        state = form.state.data
+        is_takeout_rule = form.is_takeout.data
+        is_open_rule = form.is_open.data
+        order_rule = form.order_rule.data
+        return redirect(url_for('restaurants_searched', state = state, is_takeout_rule = is_takeout_rule, is_open_rule = is_open_rule, order_rule = order_rule))
+    return render_template('search.html', form=form)
 
-@app.route('/restaurants') 
+@app.route('/restaurants', methods=['GET', 'POST'])
 def restaurants():
-    bizs = g.conn.execute('''
-        SELECT * FROM business_wide LIMIT 50
-    ''').fetchall()
-    return render_template('restaurants_main.html', bizs=bizs)  
+    form = SearchForm()
+    if request.method == "POST":
+        state = form.state.data
+        is_takeout_rule = form.is_takeout.data
+        is_open_rule = form.is_open.data
+        order_rule = form.order_rule.data
+        return redirect(url_for('restaurants_searched', state = state, is_takeout_rule = is_takeout_rule, is_open_rule = is_open_rule, order_rule = order_rule))
+    else:
+        bizs = g.conn.execute('''
+            SELECT * FROM business_wide LIMIT 50
+        ''').fetchall()
+        return render_template('restaurants_main.html',  bizs = bizs, form = form)
+
+@app.route('/restaurants/<string:state>/is_takeout:<string:is_takeout_rule>/is_open:<string:is_open_rule>/order_by:<string:order_rule>', methods=['GET', 'POST'])
+def restaurants_searched(state, is_takeout_rule, is_open_rule, order_rule):
+    form = SearchForm()
+    print(form)
+    print(form.state.data)
+    print(form.is_open.data)
+    print(form.validate_on_submit())
+    #if form.validate_on_submit():
+    if request.method == "POST":
+        print(is_takeout_rule == False)
+        state = form.state.data
+        is_takeout_rule = form.is_takeout.data
+        is_open_rule = form.is_open.data
+        order_rule = form.order_rule.data
+        return redirect(url_for('restaurants_searched', state = state, is_takeout_rule = is_takeout_rule, 
+                                is_open_rule = is_open_rule, order_rule = order_rule))
+    else:
+        # form.order_rule.data = order_rule
+        # form.is_open.data = is_open_rule
+        # form.is_takeout.data = is_takeout_rule
+        # form.state.data = state
+        print(state, "NOT SUBMIT!")
+        is_takeout_SQL = "AND is_takeout = 'True'" if is_takeout_rule == 'True' else ""
+        is_open_SQL = "AND is_open = 'True'" if is_open_rule == 'True' else ""
+        order_rule_SQL = order_rule + " DESC" if order_rule != "name" else order_rule
+        bizs = g.conn.execute(f'''
+            SELECT *
+            FROM business_wide
+            where state = %s {is_takeout_SQL} {is_open_SQL}
+            ORDER BY case when average_stars is null then 1 else 0 end, {order_rule_SQL}
+            ''',(state, )).fetchall()
+        if bizs is None:
+            flash('No results! Randomly pick 50 restaurants:', 'fail')
+            bizs = g.conn.execute('''
+                SELECT * FROM business_wide LIMIT 50
+            ''').fetchall()
+        return render_template('restaurants_main.html',  bizs = bizs, form = form)
 
 @app.route('/restaurant/<string:business_id>', methods=['GET', 'POST'])
 def restaurant(business_id, show = 'review'):
@@ -301,11 +319,18 @@ def restaurant(business_id, show = 'review'):
         )
         SELECT * 
         FROM reviews_wide LEFT JOIN current_user_upvote_status USING(review_id)
-        WHERE business_id = %s
-    ''', (reader_uid, business_id)).fetchall()
+        WHERE business_id = %s''', (reader_uid, business_id)).fetchall()
     tips = g.conn.execute('''
-        SELECT * FROM tips_wide
-        WHERE business_id = %s''', (business_id, )).fetchall()
+        WITH current_user_upvote_status AS(
+            SELECT review_id, 
+                SUM(CASE WHEN upvote_type  = 'like' THEN 1 ELSE 0 END) AS is_like
+            FROM Users_upvote_Review 
+            WHERE user_id = %s
+            GROUP BY review_id
+        )
+        SELECT * 
+        FROM tips_wide LEFT JOIN current_user_upvote_status USING(review_id)
+        WHERE business_id = %s''', (reader_uid, business_id, )).fetchall()
 
     favorite = CurrentUserIsFan()
     collections = None
@@ -365,7 +390,7 @@ def restaurant(business_id, show = 'review'):
                 ORDER BY collection_id''', (current_user.user_id, business_id)).fetchall()
             #return render_template("restaurant.html", restaurant=restaurant, reviews=reviews, favorite=favorite, collections=collections)
 
-    return render_template('restaurant.html', restaurant=restaurant, reviews=reviews, tips = tips, favorite=favorite, collections=collections, show = show)
+    return render_template('restaurant.html', biz=restaurant, reviews=reviews, tips = tips, favorite=favorite, collections=collections, show = show)
 
 @app.route('/restaurant/<string:business_id>/<string:show>/new_collection', methods=['GET', 'POST'])
 @login_required
@@ -386,10 +411,6 @@ def create_collection_in_restaurant(business_id, show):
     return redirect(url_for('restaurant', business_id = business_id, show = show))
 
 
-@app.route("/user_account", methods=['GET', 'POST'])
-@login_required
-def user_account():
-    return render_template('user/account.html')
 
 @app.route('/favorites') 
 @login_required
@@ -667,7 +688,6 @@ def create_review(business_id):
     return render_template('review/create_detail_review.html', biz = biz, form = form, title='New Review', legend='Submit new review')
 
 
-
 @app.route("/restaurant/<string:business_id>/tip/new", methods=['GET', 'POST'])
 @login_required
 def create_tip(business_id):
@@ -694,6 +714,29 @@ def create_tip(business_id):
         return redirect(url_for('restaurant', business_id = business_id, show = 'tip'))
     return render_template('review/create_short_tip.html', form = form, biz = biz, title='New Tip', legend='Submit new short tip')
 
+@app.route("/restaurant/<string:business_id>/create_biz_photo", methods=['GET', 'POST'])
+@login_required
+def create_biz_photo(business_id):
+    form = AddBusinessPictureForm()
+
+    biz = g.conn.execute('SELECT * FROM Business WHERE business_id = %s', (business_id, )).fetchone()
+    if form.validate_on_submit():
+        if form.picture.data:
+            picture_file = save_picture(form.picture.data, path = 'static/business_photos')
+            
+            g.conn.execute('''
+                INSERT INTO Photo_contained_Business(photo_id, business_id) 
+                VALUES(%s, %s)
+                ''', (picture_file.replace(".jpg", ""), business_id))
+            print(123123)
+            flash('Your pictures has been uploaded!', 'success')
+            return redirect(url_for('restaurant', business_id = business_id))
+        else:
+            flash('Please upload a picture!', 'danger')
+            return render_template('restaurant/add_picture.html', title='Add Picture', biz=biz, form=form)
+    return render_template('restaurant/add_picture.html', title='Add Picture', biz=biz, form=form)
+    
+
 
 @app.route("/restaurant/<string:business_id>/review/<string:review_id>/delete", methods=('POST',))
 @login_required
@@ -715,45 +758,25 @@ def upvote_review(business_id, review_id, upvote_type):
             SELECT user_id, review_id, upvote_type 
             FROM Users_upvote_Review 
             WHERE review_id = %s AND upvote_type = %s AND user_id = %s
-            ''', (review_id, upvote_type, current_user.user_id)).fetchall()
+            ''', (review_id, upvote_type if upvote_type != 'likes' else 'like', current_user.user_id)).fetchall()
     if not is_upvote():
+        
         g.conn.execute('''
             INSERT INTO Users_upvote_Review(user_id, review_id, upvote_type) VALUES(%s, %s, %s)
-        ''', (current_user.user_id, review_id, upvote_type))
+        ''', (current_user.user_id, review_id, upvote_type if upvote_type != 'likes' else 'like'))
         g.conn.execute(f'''
             UPDATE Review_of_Business 
             SET {upvote_type} = {upvote_type} + 1 
             WHERE review_id = %s
             ''', (review_id, ))
-    else: 
+    else:
         g.conn.execute('''
             DELETE FROM Users_upvote_Review
             WHERE user_id = %s AND review_id = %s AND upvote_type = %s
-        ''', (current_user.user_id, review_id, upvote_type))
+        ''', (current_user.user_id, review_id, upvote_type if upvote_type != 'likes' else 'like'))
         g.conn.execute(f'''
             UPDATE Review_of_Business 
             SET {upvote_type} = {upvote_type} - 1 
             WHERE review_id = %s
             ''', (review_id, ))
-    return redirect(url_for('restaurant', business_id=business_id))
-
-@app.route("/",methods=['GET', 'POST'])
-@app.route('/home',methods=['GET', 'POST'])
-def search():
-    form = SearchForm()
-    if form.validate_on_submit():
-        state = form.state.data
-        print(state)
-        conn = engine.connect()
-        bizs = conn.execute('''
-            SELECT *
-            FROM business_wide
-            where state = %s
-            ''',(state, )).fetchall()
-        conn.close()
-        if bizs:
-            return render_template('restaurants_main.html',  bizs = bizs)
-        else:
-            flash('No results!', 'fail')
-            return redirect(url_for('search'))
-    return render_template('search.html', form=form)
+    return redirect(url_for('restaurant', business_id=business_id, show = 'review'))
