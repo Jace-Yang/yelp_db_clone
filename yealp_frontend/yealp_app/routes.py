@@ -75,7 +75,7 @@ def register():
         add_user_to_db(email=form.email.data, name=form.username.data, password=form.password.data)
         flash('Your account has been created! You are now able to log in', 'success')
         return redirect(url_for('login'))
-    return render_template('register.html', title='Register', form=form)
+    return render_template('user/register.html', title='Register', form=form)
 
 
 @app.route("/login", methods=['GET', 'POST'])
@@ -199,7 +199,7 @@ def reset_request():
         send_reset_email(Yealper(user))
         flash('An email has been sent with instructions to reset your password.', 'info')
         return redirect(url_for('login'))
-    return render_template('reset_request.html', title='Reset Password', form=form)
+    return render_template('user/reset_request.html', title='Reset Password', form=form)
 
 
 @app.route("/reset_password/<token>", methods=['GET', 'POST'])
@@ -222,7 +222,7 @@ def reset_token(token):
             ''', (form.password.data, user.user_id))
         flash('Your password has been updated! You are now able to log in', 'success')
         return redirect(url_for('login'))
-    return render_template('reset_token.html', title='Reset Password', form=form)
+    return render_template('user/reset_token.html', title='Reset Password', form=form)
 
 @app.route("/",methods=['GET', 'POST'])
 @app.route('/home',methods=['GET', 'POST'])
@@ -250,7 +250,7 @@ def restaurants():
         bizs = g.conn.execute('''
             SELECT * FROM business_wide LIMIT 50
         ''').fetchall()
-        return render_template('restaurants_main.html',  bizs = bizs, form = form)
+        return render_template('restaurant/main.html',  bizs = bizs, form = form)
 
 @app.route('/restaurants/<string:state>/is_takeout:<string:is_takeout_rule>/is_open:<string:is_open_rule>/order_by:<string:order_rule>', methods=['GET', 'POST'])
 def restaurants_searched(state, is_takeout_rule, is_open_rule, order_rule):
@@ -286,7 +286,7 @@ def restaurants_searched(state, is_takeout_rule, is_open_rule, order_rule):
             bizs = g.conn.execute('''
                 SELECT * FROM business_wide LIMIT 50
             ''').fetchall()
-        return render_template('restaurants_main.html',  bizs = bizs, form = form)
+        return render_template('restaurant/main.html',  bizs = bizs, form = form)
 
 @app.route('/restaurant/<string:business_id>', methods=['GET', 'POST'])
 def restaurant(business_id, show = 'review'):
@@ -353,7 +353,7 @@ def restaurant(business_id, show = 'review'):
                 VALUES (%s, %s)''',
                 (current_user.user_id, business_id))
             favorite = CurrentUserIsFan()
-            #return render_template("restaurant.html", restaurant=restaurant, reviews=reviews, favorite=favorite, collections=collections)
+            #return render_template("restaurant/single_restaurant.html", restaurant=restaurant, reviews=reviews, favorite=favorite, collections=collections)
             
         if request.method == "POST" and request.form.get('favorite_action') == 'Unfavorite the restaurant':
             print(request.form)
@@ -362,7 +362,7 @@ def restaurant(business_id, show = 'review'):
                 WHERE user_id = %s AND business_id = %s''',
                 (current_user.user_id, business_id))
             favorite = CurrentUserIsFan()
-            #return render_template("restaurant.html", restaurant=restaurant, reviews=reviews, favorite=favorite, collections=collections)
+            #return render_template("restaurant/single_restaurant.html", restaurant=restaurant, reviews=reviews, favorite=favorite, collections=collections)
 
         if request.method == "POST"  and 'collections_update' in request.form:
             current_collections = request.form.getlist('collections_update')
@@ -386,9 +386,9 @@ def restaurant(business_id, show = 'review'):
                 LEFT JOIN Collection_contain_Business USING(collection_owner_id, collection_id)
                 GROUP BY collection_id
                 ORDER BY collection_id''', (current_user.user_id, business_id)).fetchall()
-            #return render_template("restaurant.html", restaurant=restaurant, reviews=reviews, favorite=favorite, collections=collections)
+            #return render_template("restaurant/single_restaurant.html", restaurant=restaurant, reviews=reviews, favorite=favorite, collections=collections)
 
-    return render_template('restaurant.html', biz=restaurant, reviews=reviews, tips = tips, favorite=favorite, collections=collections, show = show)
+    return render_template('restaurant/single_restaurant.html', biz=restaurant, reviews=reviews, tips = tips, favorite=favorite, collections=collections, show = show)
 
 @app.route('/restaurant/<string:business_id>/<string:show>/new_collection', methods=['GET', 'POST'])
 @login_required

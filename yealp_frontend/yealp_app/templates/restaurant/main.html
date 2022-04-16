@@ -17,7 +17,7 @@
                         <div class="col-2">
                             {{ form.state.label(class="form-control-lg") }}
                         </div>
-                        <div class="col-1">
+                        <div class="col-2.5">
                         
                             {% if form.state.errors %}
                                 {{ form.state(class="form-control form-control-lg is-invalid") }}
@@ -35,7 +35,7 @@
                         <div class="col-3">
                             {{ form.order_rule.label(class="form-control-lg m-1.75") }}
                         </div>
-                        <div class="col-6">
+                        <div class="col-5">
                             {% if form.order_rule.errors %}
                                 {{ form.order_rule(class="form-control form-control-lg is-invalid") }}
                                 <div class="invalid-feedback">
