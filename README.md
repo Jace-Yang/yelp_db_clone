@@ -1,26 +1,12 @@
 
+# Project for COMS 4111
 
-Create a virtual environment
+Jinhang Yang, Binghong Yu
 
-        source venvyb/bin/activate
+To rerun our code:
+- `database_setup`: we clean the data from the yelp database.
+- `yealp_frontend`: build full stack front-end and back-end of yealp platform.
 
-Install libraries
-
-        pip install click flask sqlalchemy
-
-
-Edit `server.py` to set your database URI
-
-        DATABASEURI = "<your database uri>"
-
-
-Run it in the shell
-
-
-        python server.py
-
-Get help:
-
-        python server.py --help
-
-      
+        - Setup environments with `requirements.txt`
+        - `cd yealp_app`
+        - `python run.py`
