@@ -7,64 +7,69 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tether/1.4.0/js/tether.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js"></script>
 
+
+    
+      
+
     <div class="content-section">
         <form method="POST" action="">
-            <fieldset class="form-group">
-                <div class="row">
-                    <div class="col-10">
-                        <div class="row">
-                            <div class="col-sm-2">
-                                {{ form.state.label(class="form-control-lg") }}
-                            </div>
-                            <div class="col-sm-3">
-                                {% if form.state.errors %}
-                                    {{ form.state(class="form-control form-control-lg is-invalid") }}
-                                    <div class="invalid-feedback">
-                                        {% for error in form.state.errors %}
-                                            <span>{{ error }}</span>
-                                        {% endfor %}
-                                    </div>
-                                {% else %}
-                                    {{ form.state(class="form-control form-control-lg") }}
-                                {% endif %}
-                            </div>
-
-                            <div class="col-sm-2.5">
-                                {{ form.order_rule.label(class="form-control-lg m-1.75") }}
-                            </div>
-                            <div class="col-sm-4">
-                                {% if form.order_rule.errors %}
-                                    {{ form.order_rule(class="form-control form-control-lg is-invalid") }}
-                                    <div class="invalid-feedback">
-                                        {% for error in form.order_rule.errors %}
-                                            <span>{{ error }}</span>
-                                        {% endfor %}
-                                    </div>
-                                {% else %}
-                                    {{ form.order_rule(class="form-control form-control-lg") }}
-                                {% endif %}
-                            </div>
+            <div class="row">
+                <div class="col-10">
+                    <div class="row">
+                        <div class="col-sm-2">
+                            {{ form.state.label(class="form-control-lg") }}
+                        </div>
+                        <div class="col-sm-3">
+                        
+                            {% if form.state.errors %}
+                                {{ form.state(class="form-control form-control-lg is-invalid") }}
+                                <div class="invalid-feedback">
+                                    {% for error in form.state.errors %}
+                                        <span>{{ error }}</span>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                {{ form.state(class="form-control form-control-lg") }}
+                            {% endif %}
+                            
                         </div>
 
-                        <div class="row">
-                            <div class="form-check form-check-inline">
-                                {{ form.is_takeout.label(class="form-control-lg ml-3") }}
-                                {{ form.is_takeout(class="form-check-input-2") }}
-                            </div>
-
-                            <div class="form-check form-check-inline">
-                                {{ form.is_open.label(class="form-control-lg") }}
-                                {{ form.is_open(class="form-check-input-2") }}
-                            </div>
+                        <div class="col-sm-2.5">
+                            {{ form.order_rule.label(class="form-control-lg m-1.75") }}
+                        </div>
+                        <div class="col-sm-4">
+                            {% if form.order_rule.errors %}
+                                {{ form.order_rule(class="form-control form-control-lg is-invalid") }}
+                                <div class="invalid-feedback">
+                                    {% for error in form.order_rule.errors %}
+                                        <span>{{ error }}</span>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                {{ form.order_rule(class="form-control form-control-lg") }}
+                            {% endif %}
                         </div>
                     </div>
-                    <div class="col-2">
-                        <div class="col text-center">
-                            {{ form.submit(class="btn btn-danger mt-4") }}
+
+                    <div class="row">
+                        <div class="form-check form-check-inline">
+                            {{ form.is_takeout.label(class="form-control-lg ml-3") }}
+                            {{ form.is_takeout(class="form-check-input") }}
+                        </div>
+
+                        <div class="form-check form-check-inline">
+                            {{ form.is_open.label(class="form-control-lg") }}
+                            {{ form.is_open(class="form-check-input") }}
                         </div>
                     </div>
                 </div>
-            </fieldset>
+                <div class="col-2">
+                    <div class="col text-center">
+                        {{ form.submit(class="btn btn-danger mt-4") }}
+                    </div>
+                </div>
+            </div>
+            
         </form>
     </div>
       
@@ -74,7 +79,6 @@
                 <img class="rounded-circle article-img" src="{{ url_for('static', filename='business_photos/' + photo|string + '.jpg') }}">
             {% endfor %} -->
             
-
             <div id="carouselExampleIndicators{{biz['business_id']}}" class="carousel slide" data-ride="carousel">
                 <ol class="carousel-indicators">
                     {% for photo in biz['photo_ids'] %}
@@ -88,9 +92,6 @@
                         </div>
                     {% endfor %}
                 </div>
-
-
-
 
                 <a class="carousel-control-prev" data-target="#carouselExampleIndicators{{biz['business_id']}}" role="button" data-slide="prev" onclick="$(this).closest('.carousel').carousel('next');">
                     <span class="carousel-control-prev-icon" aria-hidden="true"></span>

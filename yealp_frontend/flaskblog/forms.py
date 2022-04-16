@@ -75,8 +75,8 @@ class SearchForm(FlaskForm):
     
     state = SelectField('States', choices=STATES_OPTIONS, default = STATES_OPTIONS[0])
     order_rule = SelectField('Order by', choices=[('name', 'Name'), ('average_stars', 'Stars'), ('n_detailed_review', 'Number of reviews')], default='Name')
-    is_takeout = BooleanField('Allow takeout', default=False)
-    is_open = BooleanField('Is opening', default=False)
+    is_takeout = BooleanField('Allow takeout')
+    is_open = BooleanField('Is opening')
     submit = SubmitField('Search')
 
 

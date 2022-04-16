@@ -258,10 +258,8 @@ def restaurants_searched(state, is_takeout_rule, is_open_rule, order_rule):
     print(form)
     print(form.state.data)
     print(form.is_open.data)
-    print(form.validate_on_submit())
-    #if form.validate_on_submit():
+
     if request.method == "POST":
-        print(is_takeout_rule == False)
         state = form.state.data
         is_takeout_rule = form.is_takeout.data
         is_open_rule = form.is_open.data
@@ -269,11 +267,11 @@ def restaurants_searched(state, is_takeout_rule, is_open_rule, order_rule):
         return redirect(url_for('restaurants_searched', state = state, is_takeout_rule = is_takeout_rule, 
                                 is_open_rule = is_open_rule, order_rule = order_rule))
     else:
-        # form.order_rule.data = order_rule
-        # form.is_open.data = is_open_rule
-        # form.is_takeout.data = is_takeout_rule
-        # form.state.data = state
-        print(state, "NOT SUBMIT!")
+        form = SearchForm()
+        form.order_rule.data = order_rule
+        form.is_open.data = True if is_open_rule == 'True' else False
+        form.is_takeout.data = True if is_takeout_rule == 'True' else False
+        form.state.data = state
         is_takeout_SQL = "AND is_takeout = 'True'" if is_takeout_rule == 'True' else ""
         is_open_SQL = "AND is_open = 'True'" if is_open_rule == 'True' else ""
         order_rule_SQL = order_rule + " DESC" if order_rule != "name" else order_rule
