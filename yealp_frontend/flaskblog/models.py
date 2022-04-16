@@ -20,9 +20,14 @@ def load_user(user_id):
 class Yealper(object):
     """Wraps User object for Flask-Login"""
     def __init__(self, user):
+        '''
+        user: a row of instance from Users table
+        '''
         self.user_id = user['user_id']
         self.name = user['name']
         self.email = user['email']
+        self.yealping_since = user['yealping_since']
+        self.account_img_file = user['account_img_file']
 
     def get_id(self):
         return self.user_id

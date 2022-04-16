@@ -1,33 +1,72 @@
 {% extends 'layout.html' %}
 
-
 {% block content %}
+    
     <div class="content-section">
         <form method="POST" action="">
             {{ form.hidden_tag() }}
-            <fieldset class="form-group">
-                <legend class="border-bottom mb-4">{{ legend }}</legend>
 
-                <div class="form-group">
-                    
-                    <div class="input-group-prepend">
-                        {{ form.state.label(class="form-control-lg m-1.75") }}
-                        {% if form.state.errors %}
-                            {{ form.state(class="form-control form-control-lg is-invalid") }}
-                            <div class="invalid-feedback">
-                                {% for error in form.state.errors %}
-                                    <span>{{ error }}</span>
-                                {% endfor %}
-                            </div>
-                        {% else %}
-                            {{ form.state(class="form-control form-control-lg") }}
-                        {% endif %}
-            
-            </fieldset>
-            <div class="form-group">
-                {{ form.submit(class="btn btn-danger btn ") }}
-              
+            <legend class="border-bottom mb-4">Welcome
+                {% if current_user.is_authenticated %}
+                    {{current_user.name}}
+                {% else %}anonymous{% endif %}, let Yealp help you find a restaurant!</legend>
+
+            <div class="form-group row">
+                <div class="col-sm-4">
+                    {{ form.state.label(class="form-control-lg m-1.75") }}
+                </div>
+                <div class="col-sm-8">
+                    {% if form.state.errors %}
+                        {{ form.state(class="form-control form-control-lg is-invalid") }}
+                        <div class="invalid-feedback">
+                            {% for error in form.state.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        {{ form.state(class="form-control form-control-lg") }}
+                    {% endif %}
+                </div>
             </div>
+
+         
+            <div class="form-check form-check-inline">
+                {{ form.is_takeout.label(class="form-control-lg") }}
+                {{ form.is_takeout(class="form-check-input-2") }}
+            </div>
+
+            <div class="form-check form-check-inline">
+                {{ form.is_open.label(class="form-control-lg") }}
+                {{ form.is_open(class="form-check-input-2") }}
+            </div>
+
+            <legend class="border-bottom mb-4"></legend>
+            <div class="form-group row">
+                <div class="col-sm-4">
+                    {{ form.order_rule.label(class="form-control-lg m-1.75") }}
+                </div>
+                <div class="col-sm-8">
+                    {% if form.order_rule.errors %}
+                        {{ form.order_rule(class="form-control form-control-lg is-invalid") }}
+                        <div class="invalid-feedback">
+                            {% for error in form.order_rule.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        {{ form.order_rule(class="form-control form-control-lg") }}
+                    {% endif %}
+                </div>
+            </div>
+            
+
+            <legend class="border-bottom mb-4"></legend>
+            <div class="form-group row">
+                <div class="col text-center">
+                    {{ form.submit(class="btn btn-danger m-2") }}
+                </div>
+            </div>
+        
         </form>
     </div>
 {% endblock %}
