@@ -8,5 +8,7 @@ To rerun our code:
 - `yealp_frontend`: build full stack front-end and back-end of yealp platform.
 
         - Setup environments with `requirements.txt`
+
         - `cd yealp_app`
+        
         - `python run.py`
