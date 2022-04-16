@@ -45,20 +45,78 @@
   
   <div class="content-section">
     <p>This user has {{reviews|length }} review(s): </p>
+
     {% for review in reviews %}
-      <article class="media content-section">
-        <img class="rounded-circle article-img" src="{{ url_for('static', filename='profile_pics/default.jpg') }}">
-        <div class="media-body">
-          <div class="article-metadata">
+          <article class="media content-section">
+            <img class="rounded-circle article-img" src="{{ url_for('static', filename='profile_pics/' + review['account_img_file']) }}">
             
-            
-            
-            <span class="badge badge-primary">Stars: {{review['stars']}}</span>
-            on <a class="mr-1" href="{{ url_for('restaurant', business_id=review['business_id']) }}">{{ review['name'] }}</a>
-            <small class="text-muted">{{ review['review_date'].strftime('%Y-%m-%d') }}</small>
-          </div>  
-          <p class="article-content">{{ review['detailed_review'] }}</p>
-      </article>
-    {% endfor %}
+            <div class="media-body">
+              <div class="review-metadata">
+
+                <div class="row">
+
+                  <div class="col-10">
+                    <a class="mr-1" href="{{ url_for('user_main', user_id=review['user_id']) }}">{{ review['user_name'] }}</a>
+                    <span class="badge  badge-light mb-1">Words: {{review['detailed_review']|length}}</span>
+                    <small class="text-muted">{{ review['review_date'].strftime('%Y-%m-%d') }}</small> on <a class="mr-1" href="{{ url_for('restaurant', business_id=review['business_id']) }}">{{ review['business_name'] }}</a>
+                  </div>
+                  
+                
+                  <div class="col-2">
+                    <img class="img" width = '100%' src="{{ url_for('static', filename='stars/' + review['stars']|string + '.png') }}">
+                  </div>              
+                </div>
+
+                
+                
+                
+              </div>  
+              <p class="article-content">{{ review['detailed_review'] }}</p>
+              
+              {% if current_user.user_id == review['user_id'] %}
+                <form action="{{ url_for('delete_review', review_id = review['review_id'], business_id=review['business_id']) }}" method="POST">
+                  <input type="submit" value="Delete" class="btn btn-danger btn-sm"
+                      onclick="return confirm('Are you sure you want to delete your review?')">
+                </form>  
+              {% else %}
+              
+              {% endif %}
+            </div>
+          </article>
+        {% endfor %}
+
+  </div>
+
+
+  <div class="content-section">
+    <p>This user has {{tips|length }} tips(s): </p>
+
+    {% for tip in tips %}
+          <article class="media content-section">
+            <img class="rounded-circle article-img" src="{{ url_for('static', filename='profile_pics/' + tip['account_img_file']) }}">
+            <div class="media-body">
+              <div class="review-metadata">
+                <a class="mr-1" href="{{ url_for('user_main', user_id=tip['user_id']) }}">{{ tip['user_name'] }}</a>
+                <span class="badge  badge-light mb-1">Words: {{tip['short_tip']|length}}</span>
+                <small class="text-muted">{{ tip['review_date'].strftime('%Y-%m-%d') }}</small>
+              </div>  
+              <p class="article-content">{{ tip['short_tip'] }}</p>
+              
+              {% if current_user.user_id == tip['user_id'] %}
+                <form action="{{ url_for('delete_review', review_id = tip['review_id'], business_id=tip['business_id']) }}" method="POST">
+                  <input type="submit" value="Delete" class="btn btn-danger btn-sm"
+                      onclick="return confirm('Are you sure you want to delete your review?')">
+                </form>  
+              {% else %}
+                <div style="display: flex;">
+                  <form action="{{ url_for('upvote_review', review_id = tip['review_id'], business_id=tip['business_id'], upvote_type = 'likes', show = 'tip') }}" method="POST">
+                    <input class="btn btn-primary btn-sm m-1 {% if tip['is_like'] %}active{% endif %}" type="submit" value="Likes: {{tip['likes']}}" >
+                  </form>
+                </div>
+              {% endif %}
+            </div>
+          </article>
+        {% endfor %}
+
   </div>
 {% endblock %}

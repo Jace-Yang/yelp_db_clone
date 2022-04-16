@@ -420,7 +420,7 @@ def user_favorites():
             WHERE user_id = %s
         )
         SELECT * 
-        FROM business JOIN user_favorite USING(business_id) 
+        FROM business_wide JOIN user_favorite USING(business_id) 
         ORDER BY name
         ''', (current_user.user_id, )).fetchall()
     collections = g.conn.execute('''
@@ -438,7 +438,6 @@ def user_favorites():
             
         SELECT user_id AS owner_uid, collection_id, name as collection_owner_name, collection_name
         FROM collection JOIN Users USING(user_id)''', (current_user.user_id, )).fetchall()
-
     
     return render_template('user/favorites.html', bizs=bizs, collections=collections)  
 
@@ -465,20 +464,13 @@ def user_main(user_id):
     user = get_user(user_id)
     # Load all the review sented by the mainpage user
     reviews = g.conn.execute('''
-        WITH one_user AS(
-            SELECT user_id, name AS username
-            FROM Users
-            WHERE user_id = %s),
-
-        User_review AS(
-            SELECT review_id, username
-            FROM one_user JOIN Users_write_Review USING(user_id)
-        )
-
         SELECT * 
-        FROM User_review 
-            JOIN Review_of_Business USING(review_id)
-            JOIN Business USING(business_id)''', (user_id, )).fetchall()
+        FROM reviews_wide
+        WHERE user_id = %s''', (user_id, )).fetchall()
+    tips = g.conn.execute('''
+        SELECT * 
+        FROM tips_wide
+        WHERE user_id = %s''', (user_id, )).fetchall()
     # Load all the collections created by the mainpage user
     collections = g.conn.execute('''
         WITH one_user AS(
@@ -512,7 +504,7 @@ def user_main(user_id):
                 (user_id, current_user.user_id, follow_since))
             is_fan = True
             n_fans = get_n_fans(user_id)
-            return render_template('user/main.html', user=user, reviews=reviews, collections=collections, is_fan=is_fan, n_fans = n_fans)
+            return render_template('user/main.html', user=user, reviews=reviews, collections=collections, is_fan=is_fan, n_fans = n_fans, tips=tips)
 
         # Execute the Unfollow request
         if request.form.get('follow_action') == 'Unfollow this user':
@@ -523,8 +515,8 @@ def user_main(user_id):
                 (user_id, current_user.user_id))
             is_fan = False
             n_fans = get_n_fans(user_id)
-            return render_template('user/main.html', user=user, reviews=reviews, collections=collections, is_fan=is_fan, n_fans = n_fans)
-    return render_template('user/main.html', user=user, reviews=reviews, collections=collections, is_fan=is_fan, n_fans = n_fans)
+            return render_template('user/main.html', user=user, reviews=reviews, collections=collections, is_fan=is_fan, n_fans = n_fans, tips=tips)
+    return render_template('user/main.html', user=user, reviews=reviews, collections=collections, is_fan=is_fan, n_fans = n_fans, tips=tips)
 
 @app.route("/user/followees", methods=['GET', 'POST'])
 def user_followees():
@@ -625,7 +617,7 @@ def user_collection(user_id, collection_id):
             FROM Collection_contain_Business
             WHERE collection_owner_id = %s AND collection_id = %s)
         SELECT *
-        FROM bizs_in_collections JOIN Business USING(business_id)''', 
+        FROM bizs_in_collections JOIN business_wide USING(business_id)''', 
         (user_id, collection_id)).fetchall()
     collection = get_collection()
 

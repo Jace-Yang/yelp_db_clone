@@ -82,7 +82,7 @@
               {% if current_user.is_authenticated %}
                 <p class='text-muted'>Below is your favorites in Yealp!
                   <ul class="list-group">
-                    <li class="list-group-item list-group-item-light"><a href="{{ url_for('user_main', user_id = current_user.user_id) }}">My main pages</a></li>
+                    <li class="list-group-item list-group-item-light"><a href="{{ url_for('user_main', user_id = current_user.user_id) }}">My main page</a></li>
                     <li class="list-group-item list-group-item-light"><a href="{{ url_for('user_favorites') }}">My favorites</a></li>
                     <li class="list-group-item list-group-item-light"><a href="{{ url_for('user_collections', user_id = current_user.user_id) }}">My collections</a></li>
                     <li class="list-group-item list-group-item-light"><a href="{{ url_for('user_followees') }}">My followees</li>

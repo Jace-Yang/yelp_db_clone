@@ -30,11 +30,86 @@
 
        
     {% if bizs %}
-        {% for biz in bizs %}
-        <a href="{{url_for('restaurant', business_id=biz['business_id'])}}">
-            <h6>{{ biz['name'] }}</h6>
-        </a>
-        {% endfor %}
+      {% for biz in bizs %}
+        <article class="media content-section-2">
+            <!-- {% for photo in biz['photo_ids'] %}
+                <img class="rounded-circle article-img" src="{{ url_for('static', filename='business_photos/' + photo|string + '.jpg') }}">
+            {% endfor %} -->
+            
+            <div id="carouselExampleIndicators{{biz['business_id']}}" class="carousel slide" data-ride="carousel">
+                <ol class="carousel-indicators">
+                    {% for photo in biz['photo_ids'] %}
+                        <li data-target="#carouselExampleIndicators{{biz['business_id']}}" data-slide-to={{loop.index}} class="{% if loop.index == 1 %}active{% endif %}"></li>
+                    {% endfor %}
+                </ol>
+                <div class="carousel-inner">
+                    {% for photo in biz['photo_ids'] %}
+                        <div class="carousel-item {% if loop.index == 1 %}active{% endif %}">
+                            <img class="d-block w-100" alt = "invalid" src="{{ url_for('static', filename='business_photos/' + photo|string + '.jpg') }}" alt="{{biz['business_id']}}">
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <a class="carousel-control-prev" data-target="#carouselExampleIndicators{{biz['business_id']}}" role="button" data-slide="prev" onclick="$(this).closest('.carousel').carousel('next');">
+                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    <span class="sr-only">Previous</span>
+                </a>
+                <a class="carousel-control-next" data-target="#carouselExampleIndicators{{biz['business_id']}}" role="button" data-slide="next" onclick="$(this).closest('.carousel').carousel('next');">
+                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    <span class="sr-only">Next</span>
+                </a>
+            </div>
+
+            <div class="container-fluid">
+                <div class="row">
+
+                    <div class="col-9">
+                        <h5><a href="{{url_for('restaurant', business_id=biz['business_id'])}}">
+                            {{ biz['name'] }}
+                        </a> </h5>
+                    </div>
+                    
+                    
+                    <div class="col-3 float-right">
+                        <img class="img" width = "100%" alt="Responsive image" src="{{ url_for('static', filename='stars/' + biz['rounded_average_stars']|string + '.png') }}">
+                    </div>
+
+                </div>
+                <div class="row">
+                    <div class="col-9">
+                        {% for category in biz['category_names'] %}
+                            <span class="badge badge-secondary">{{category}}</span>
+                        {% endfor %} 
+                        <ul>
+                            <li style="padding:0.25em">
+                                City: {{ biz['city'] }}, {{ biz['state'] }}
+                            </li>
+                            <li style="padding:0.25em">
+                                
+                                <a href = {{'https://www.google.com/maps/search/?api=1&query=' + biz['latitude']|string+ ',' + biz['longitude']|string}}>Address: </a>{{biz['address'] }}, {{biz['postal_code'] }}
+                            </li>
+                        </ul>
+
+                        {% if biz['is_open']|string == 'True' %}
+                            <b style="color:#479f71;">Open</b>
+                        {% else %}
+                            <b style="color:#cd2e20;">Closed</b>
+                        {% endif %}
+
+                        {% if biz['is_takeout']|string == 'True' %}
+                            &nbsp Take out<img width = "5%" src="{{ url_for('static', filename='icons/is_biz_attributes.png') }}" >
+                        {% endif %}
+                    </div>
+                    <div class="col-3 float-right">
+                        <small class="text-muted">{{biz['average_stars']}} stars out of {{biz['n_detailed_review']}} reviews</small>
+                        
+                    </div>
+                </div>
+            </div>
+        </article>    
+      {% endfor %}
+    {% else %}
+        <p>This is a empty collection! Go browse the platform and add some restaurants to it!</p>
     {% endif %}
 
 {% endblock %}
