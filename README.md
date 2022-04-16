@@ -1,5 +1,5 @@
 
-# Project for COMS 4111
+# Project 1 for COMS 4111 Introduction to database
 
 Jinhang Yang, Binghong Yu
 
