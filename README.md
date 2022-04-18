@@ -43,7 +43,7 @@ Steps:
 ## ✨ Demo
 
 
-<details>
+<details open>
 <summary>
 🍭 <strong>Main page</strong>
 </summary>
@@ -54,7 +54,7 @@ Steps:
 
 ### Anonymous User
 
-<details>
+<details open>
 <summary>
 🍭 <strong>Search a restaurant by conditions such as locations, stars, reviews</strong>
 </summary>
@@ -63,7 +63,7 @@ Steps:
 
 <br/>
 
-<details>
+<details >
 <summary>
 🍭 <strong>Without login, User could only review but coud not make reaction such as "like" to posts</strong>
 
