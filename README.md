@@ -8,7 +8,7 @@
 <br/>
 
 <!-- tag line -->
-<h3 align='center'> Make Your Yealp App Real ! </h3>
+<h3 align='center'> See how we clone a Yelp full-stack web app- Yealp! </h3>
 
 <br/>
 
