@@ -8,7 +8,7 @@
 <br/>
 
 <!-- tag line -->
-<h3 align='center'> See how we clone a Yelp full-stack web app- Yealp! </h3>
+<h3 align='center'> See how we clone a Yelp full-stack web app- [Yealp!](http://34.75.144.142:8111/) </h3>
 
 <br/>
 
