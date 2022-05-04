@@ -150,22 +150,12 @@ Steps:
 
 To rerun our code:
 
-1 `database_setup`: we esign the database on paper using ER-modeling, then implement database by translating model into a database schemam. Next step, we clean the data from the yelp database by running through the `Data schema and DB populating.ipynb`
+1 `database_setup`: we designed the database from scratch using ER-modeling, then implemented database by translating ER into a database schemam. Next step, we clean the data from the official yelp dataset by running through the `Data schema and DB populating.ipynb`
 
-2 `yealp_frontend`: build full stack front-end and back-end of yealp platform.
-- Setup environments with `requirements.txt`
+2 `yealp_frontend`: build full stack front-end and back-end of yealp platform. To run locally:
+
+- Setup virtual environment with `requirements.txt`
 
 - `cd yealp_frontend`
 
 - `python run.py`
-<br/>
-
-
-
-
-
-
-
-
-
-
