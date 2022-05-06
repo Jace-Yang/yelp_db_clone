@@ -3,3 +3,4 @@ data/
 **/.DS_Store
 *.pyc
 database_setup/SQL prototyping.ipynb
+spark_data_analysis/.ipynb_checkpoints/examples-checkpoint.ipynb
