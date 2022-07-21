@@ -5,7 +5,6 @@ from flask_wtf.file import FileField, FileAllowed
 from flask_login import current_user
 from wtforms import StringField, PasswordField, SubmitField, BooleanField, TextAreaField, SelectField
 from wtforms.validators import DataRequired, Length, Email, EqualTo, ValidationError
-from yealp_app.models import User
 from yealp_app import app, db,engine
 from flask import render_template, url_for, flash, redirect, request, abort, g, session
 
