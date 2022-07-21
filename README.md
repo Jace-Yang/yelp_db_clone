@@ -10,7 +10,7 @@
 <!-- tag line -->
 <h3 align='center'> See how we clone a Yelp full-stack web app- [Yealp]! </h3>
 
-<h4 align='center'> Deployed at GCP: http://34.75.144.142:8111/ </h4>
+<h4 align='center'> Deployed at GCP: http://104.196.193.159:8111/ </h4>
 
 <br/>
 
